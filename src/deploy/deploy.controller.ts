@@ -23,7 +23,6 @@ export class DeployController {
           cd ~/nodejs &&
           git pull origin main &&
           npm install --omit=dev &&
-          npm run build:all &&
           pm2 restart tasks-api
         `,
         {
