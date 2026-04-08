@@ -15,8 +15,7 @@ import { DeployModule } from './deploy/deploy.module';
     // Serves the built Angular app for all non-API routes
     ServeStaticModule.forRoot({
       rootPath: join(
-        __dirname,
-        '..',
+        process.cwd(),
         'frontend',
         'dist',
         'frontend',
