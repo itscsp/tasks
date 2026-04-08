@@ -18,63 +18,24 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      # ── Build NestJS ──────────────────────────────────────────────
       - name: Install backend dependencies
         run: npm install
 
       - name: Build NestJS
         run: npm run build
 
-      # ── Build Angular ─────────────────────────────────────────────
       - name: Install frontend dependencies
         run: cd frontend && npm install
 
       - name: Build Angular
         run: cd frontend && npm run build
 
-      # ── Upload via SCP ────────────────────────────────────────────
-      - name: Upload dist (NestJS build)
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          source: "dist/"
-          target: "~/nodejs/"
-
-      - name: Upload frontend build
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          source: "frontend/dist/"
-          target: "~/nodejs/"
-
-      - name: Upload package.json
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          source: "package.json,package-lock.json"
-          target: "~/nodejs/"
-
-      # ── Install prod deps & restart ───────────────────────────────
-      - name: Install production deps & restart app
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            cd ~/nodejs
-            npm install --omit=dev
-            pm2 restart tasks-api || pm2 start dist/main.js --name tasks-api
-            pm2 save
+      # ── Trigger deployment webhook on the live server ─────────────
+      # The server pulls from GitHub and restarts itself
+      - name: Trigger deploy webhook
+        run: |
+          curl -f -X POST https://tasks.drcart.in/api/v1/deploy \
+            -H "x-deploy-token: ${{ secrets.DEPLOY_SECRET }}" \
+            --max-time 300 \
+            --retry 2 \
+            --retry-delay 5

@@ -5,6 +5,7 @@ import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TodosModule } from './todos/todos.module';
+import { DeployModule } from './deploy/deploy.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { TodosModule } from './todos/todos.module';
     }),
 
     TodosModule,
+    DeployModule,
   ],
   controllers: [AppController],
   providers: [AppService],
