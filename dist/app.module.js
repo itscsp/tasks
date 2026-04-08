@@ -8,9 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
-const serve_static_1 = require("@nestjs/serve-static");
 const config_1 = require("@nestjs/config");
-const path_1 = require("path");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const todos_module_1 = require("./todos/todos.module");
@@ -22,10 +20,6 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
-            serve_static_1.ServeStaticModule.forRoot({
-                rootPath: (0, path_1.join)(process.cwd(), 'frontend', 'dist', 'frontend', 'browser'),
-                exclude: ['/api/v1*'],
-            }),
             todos_module_1.TodosModule,
             deploy_module_1.DeployModule,
         ],
