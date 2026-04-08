@@ -22,8 +22,15 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   await app.listen(port);
-  console.log(
-    `🚀 NestJS running on http://localhost:${port}/api/v1 [${isProd ? 'production' : 'development'}]`,
-  );
+
+  const mode = isProd ? 'production' : 'development';
+  console.log(`\n🚀 Server ready [${mode}]`);
+  console.log(`   API:      http://localhost:${port}/api/v1`);
+  if (!isProd) {
+    console.log(`   Frontend: http://localhost:4200`);
+  } else {
+    console.log(`   Frontend: https://tasks.drcart.in`);
+  }
+  console.log('');
 }
 bootstrap();
