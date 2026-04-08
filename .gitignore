@@ -395,9 +395,6 @@ Temporary Items
 =======
 # Local
 .env
+dist
 .webpack
 .serverless/**/*.zip
-
-# Never commit node_modules
-node_modules/
-frontend/node_modules/
