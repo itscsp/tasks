@@ -24,7 +24,7 @@ exports.AppModule = AppModule = __decorate([
             config_1.ConfigModule.forRoot({ isGlobal: true }),
             serve_static_1.ServeStaticModule.forRoot({
                 rootPath: (0, path_1.join)(__dirname, '..', 'frontend', 'dist', 'frontend', 'browser'),
-                exclude: ['/api/v1/(.*)'],
+                exclude: ['/api/v1*'],
             }),
             todos_module_1.TodosModule,
             deploy_module_1.DeployModule,

@@ -23,7 +23,7 @@ import { DeployModule } from './deploy/deploy.module';
         'browser',
       ),
       // Never intercept /api/v1/* — those go to NestJS controllers
-      exclude: ['/api/v1/(.*)'],
+      exclude: ['/api/v1*'],
     }),
 
     TodosModule,
