@@ -32,26 +32,38 @@ jobs:
       - name: Build Angular
         run: cd frontend && npm run build
 
-      # ── Deploy built files to Hostinger via rsync ─────────────────
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      # ── Upload via SCP ────────────────────────────────────────────
+      - name: Upload dist (NestJS build)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "dist/"
+          target: "~/nodejs/"
 
-      - name: Upload built files to server
-        run: |
-          rsync -avz --delete \
-            --exclude='node_modules' \
-            --exclude='frontend/node_modules' \
-            --exclude='frontend/src' \
-            --exclude='.git' \
-            --exclude='.env' \
-            -e "ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/id_rsa" \
-            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/nodejs/
+      - name: Upload frontend build
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "frontend/dist/"
+          target: "~/nodejs/"
 
-      # ── Install prod deps & restart on server ─────────────────────
+      - name: Upload package.json
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "package.json,package-lock.json"
+          target: "~/nodejs/"
+
+      # ── Install prod deps & restart ───────────────────────────────
       - name: Install production deps & restart app
         uses: appleboy/ssh-action@v1.0.3
         with:
