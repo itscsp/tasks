@@ -17,12 +17,16 @@ export class DeployController {
 
     try {
       const output = execSync(
-        `cd ~/nodejs && git pull origin main && npm install --omit=dev && npm run build:all && pm2 restart tasks-api`,
+        `
+          export NVM_DIR="$HOME/.nvm" &&
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" &&
+          cd ~/nodejs &&
+          git pull origin main &&
+          npm install --omit=dev &&
+          npm run build:all &&
+          pm2 restart tasks-api
+        `,
         {
-          env: {
-            ...process.env,
-            NVM_DIR: `${process.env.HOME}/.nvm`,
-          },
           shell: '/bin/bash',
           timeout: 300000, // 5 minutes
         },
