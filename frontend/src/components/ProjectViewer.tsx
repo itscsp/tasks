@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { CheckCircle2, Circle, MoreHorizontal, Plus, Calendar as CalendarIcon, Tag, Loader2 } from 'lucide-react';
+import { CheckCircle2, Circle, Plus, Calendar as CalendarIcon, Tag, Loader2 } from 'lucide-react';
 import classNames from 'classnames';
 import api from '../lib/api';
 import { AddTaskForm } from './AddTaskForm';

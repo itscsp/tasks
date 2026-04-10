@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { format, addDays, nextMonday, nextSaturday, isSameDay } from 'date-fns';
+import { useState, useRef, useEffect } from 'react';
+import { format, addDays, nextMonday, nextSaturday } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import { Calendar as CalendarIcon, Sun, ArrowRightSquare, Coffee, Slash } from 'lucide-react';
 import classNames from 'classnames';

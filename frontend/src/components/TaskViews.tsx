@@ -7,8 +7,6 @@ import {
   Plus, 
   ChevronRight, 
   ChevronLeft,
-  ChevronDown,
-  X,
   Loader2
 } from 'lucide-react';
 import classNames from 'classnames';
@@ -281,7 +279,7 @@ export const Today = () => {
         </button>
       ) : (
         <ViewTaskForm 
-          dueDate={new Date().toISOString().split('T')[0]} 
+          defaultDueDate={new Date().toISOString().split('T')[0]} 
           onCancel={() => setIsAdding(false)} 
           onSave={(newTask) => {
             setTasks([...tasks, newTask]);
@@ -377,7 +375,7 @@ export const Upcoming = () => {
                 
                 {isAddingForDate === group.date ? (
                   <ViewTaskForm 
-                    dueDate={group.date}
+                    defaultDueDate={group.date}
                     onCancel={() => setIsAddingForDate(null)}
                     onSave={(newTask) => {
                       setTasks([...tasks, newTask]);

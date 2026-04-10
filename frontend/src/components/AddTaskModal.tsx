@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import api from '../lib/api';
 import { CustomDatePicker } from './CustomDatePicker';
 

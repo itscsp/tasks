@@ -10,12 +10,10 @@ import {
   Circle,
   MessageSquare,
   ChevronDown,
-  Send,
   Loader2,
   Paperclip,
   Mic,
-  Smile,
-  Type
+  Smile
 } from 'lucide-react';
 import api from '../lib/api';
 import classNames from 'classnames';
