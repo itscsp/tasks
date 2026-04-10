@@ -20,7 +20,7 @@ export const Register = () => {
 
     try {
       const response = await api.post('/auth/register', { name, email, password });
-      login(response.data.token, response.data.user);
+      login(response.data.token, response.data.refresh_token, response.data.user);
       navigate('/');
     } catch (err: any) {
       console.error(err);

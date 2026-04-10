@@ -1,5 +1,9 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useState, useContext, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import api from '../lib/api';
+import { AddTaskModal } from './AddTaskModal';
+import { TaskDetailModal } from './TaskDetailModal';
 import { 
   Plus, 
   Search, 
@@ -16,10 +20,33 @@ import {
 } from 'lucide-react';
 
 export const Layout = ({ children }: { children: ReactNode }) => {
+  const { user } = useContext(AuthContext);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Listen for task detail requests
+    const handleOpenDetail = (e: any) => setSelectedTaskId(e.detail);
+    window.addEventListener('open-task-detail', handleOpenDetail);
+    return () => window.removeEventListener('open-task-detail', handleOpenDetail);
+  }, []);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await api.get('/projects');
+        setProjects(response.data);
+      } catch (err) {
+        console.error('Failed to fetch projects', err);
+      }
+    };
+    fetchProjects();
+  }, []);
 
   const navItems = [
-    { to: '/', icon: Inbox, label: 'Inbox', color: 'text-sky-400', count: 2 },
+    { to: '/', icon: Inbox, label: 'Inbox', color: 'text-sky-400' },
     { to: '/today', icon: Calendar, label: 'Today', color: 'text-green-500' },
     { to: '/upcoming', icon: CalendarDays, label: 'Upcoming', color: 'text-purple-400' },
     { to: '/filters', icon: Filter, label: 'Filters & Labels', color: 'text-yellow-500' },
@@ -55,9 +82,13 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         {/* User Profile Section */}
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center space-x-2.5 group cursor-pointer p-1 rounded-md hover:bg-[#363636] transition-colors">
-            <div className="w-7 h-7 rounded-full bg-orange-600 flex items-center justify-center text-white text-[10px] font-bold ring-2 ring-transparent group-hover:ring-[#555] transition-all">K</div>
+            <div className="w-7 h-7 rounded-full bg-orange-600 flex items-center justify-center text-white text-[10px] font-bold ring-2 ring-transparent group-hover:ring-[#555] transition-all">
+              {user?.name?.[0].toUpperCase() || 'K'}
+            </div>
             <div className="flex items-center space-x-1">
-              <span className="font-semibold text-[13px] text-gray-200">Kiran</span>
+              <span className="font-semibold text-[13px] text-gray-200 truncate max-w-[100px]">
+                {user?.name || 'User'}
+              </span>
               <ChevronDown className="w-3 h-3 text-gray-500" />
             </div>
           </div>
@@ -70,9 +101,11 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           </div>
         </div>
 
-        {/* Global Actions */}
         <div className="px-3 space-y-0.5">
-          <button className="w-full flex items-center space-x-3 px-2 py-2 text-[#db4c3f] hover:bg-[#363636] rounded-md transition-colors text-[13px] font-medium group">
+          <button 
+            onClick={() => setIsAddTaskModalOpen(true)}
+            className="w-full flex items-center space-x-3 px-2 py-2 text-[#db4c3f] hover:bg-[#363636] rounded-md transition-colors text-[13px] font-medium group"
+          >
             <Plus className="w-4 h-4 p-0.5 bg-[#db4c3f] text-white rounded-full group-hover:scale-110 transition-transform" />
             <span>Add task</span>
           </button>
@@ -99,9 +132,6 @@ export const Layout = ({ children }: { children: ReactNode }) => {
                 <item.icon className={`w-[18px] h-[18px] ${item.color}`} />
                 <span>{item.label}</span>
               </div>
-              {item.count && (
-                <span className="text-[11px] text-gray-500 font-medium group-hover:text-gray-400 transition-colors">{item.count}</span>
-              )}
             </NavLink>
           ))}
 
@@ -115,14 +145,24 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             </div>
             
             <div className="space-y-0.5">
-              <NavLink to="/project/daily" className={({ isActive }) => `
-                w-full flex items-center space-x-3 px-2 py-2 rounded-md transition-colors text-[13px]
-                ${isActive ? 'bg-[#363636] text-white font-medium' : 'text-gray-300 hover:bg-[#363636]'}
-              `}>
-                <span className="text-[#db4c3f] text-lg font-bold w-[18px] text-center">#</span>
-                <span className="truncate flex-1">Daily tasks</span>
-                <span className="text-[11px] text-gray-500">1</span>
-              </NavLink>
+              {projects.map((project) => (
+                <NavLink 
+                  key={project.id}
+                  to={`/project/${project.id}`} 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={({ isActive }) => `
+                    w-full flex items-center space-x-3 px-2 py-2 rounded-md transition-colors text-[13px]
+                    ${isActive ? 'bg-[#363636] text-white font-medium' : 'text-gray-300 hover:bg-[#363636]'}
+                  `}
+                >
+                  <span className="text-lg font-bold w-[18px] text-center" style={{ color: project.color || '#db4c3f' }}>#</span>
+                  <span className="truncate flex-1">{project.title}</span>
+                </NavLink>
+              ))}
+
+              {projects.length === 0 && (
+                <div className="px-3 py-2 text-[11px] text-gray-600 italic">No projects yet</div>
+              )}
             </div>
           </div>
         </nav>
@@ -134,6 +174,22 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           {children}
         </div>
       </main>
+
+      <AddTaskModal 
+        isOpen={isAddTaskModalOpen}
+        onClose={() => setIsAddTaskModalOpen(false)}
+        onTaskAdded={() => {
+          window.dispatchEvent(new Event('task-added'));
+        }}
+      />
+
+      <TaskDetailModal 
+        taskId={selectedTaskId}
+        onClose={() => setSelectedTaskId(null)}
+        onTaskUpdated={() => {
+          window.dispatchEvent(new Event('task-added'));
+        }}
+      />
     </div>
   );
 };

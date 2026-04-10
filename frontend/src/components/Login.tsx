@@ -20,7 +20,7 @@ export const Login = () => {
 
     try {
       const response = await api.post('/auth/login', { email, password });
-      login(response.data.token, response.data.user);
+      login(response.data.token, response.data.refresh_token, response.data.user);
       navigate('/');
     } catch (err: any) {
       console.error(err);

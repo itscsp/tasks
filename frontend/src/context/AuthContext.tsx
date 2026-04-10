@@ -9,49 +9,84 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
-  login: (token: string, user: User) => void;
+  isLoading: boolean;
+  login: (token: string, refreshToken: string, user: User) => void;
   logout: () => void;
+  updateToken: (newToken: string, newRefreshToken: string) => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
+  refreshToken: null,
   isAuthenticated: false,
+  isLoading: true,
   login: () => {},
   logout: () => {},
+  updateToken: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('csp_token');
-    const savedUser = localStorage.getItem('csp_user');
-    
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
+    const initAuth = () => {
+      const savedToken = localStorage.getItem('csp_token');
+      const savedRefreshToken = localStorage.getItem('csp_refresh_token');
+      const savedUser = localStorage.getItem('csp_user');
+      
+      if (savedToken && savedUser) {
+        setToken(savedToken);
+        setRefreshToken(savedRefreshToken);
+        setUser(JSON.parse(savedUser));
+      }
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
-  const login = (newToken: string, newUser: User) => {
+  const login = (newToken: string, newRefreshToken: string, newUser: User) => {
     localStorage.setItem('csp_token', newToken);
+    localStorage.setItem('csp_refresh_token', newRefreshToken);
     localStorage.setItem('csp_user', JSON.stringify(newUser));
     setToken(newToken);
+    setRefreshToken(newRefreshToken);
     setUser(newUser);
+  };
+
+  const updateToken = (newToken: string, newRefreshToken: string) => {
+    localStorage.setItem('csp_token', newToken);
+    localStorage.setItem('csp_refresh_token', newRefreshToken);
+    setToken(newToken);
+    setRefreshToken(newRefreshToken);
   };
 
   const logout = () => {
     localStorage.removeItem('csp_token');
+    localStorage.removeItem('csp_refresh_token');
     localStorage.removeItem('csp_user');
     setToken(null);
+    setRefreshToken(null);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, login, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      token, 
+      refreshToken, 
+      isAuthenticated: !!token, 
+      isLoading,
+      login, 
+      logout,
+      updateToken
+    }}>
       {children}
     </AuthContext.Provider>
   );
