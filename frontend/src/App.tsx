@@ -10,6 +10,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 };
 
 import { Login } from './components/Login';
+import { Register } from './components/Register';
 
 // Placeholder views
 import { ProjectViewer as Project } from './components/ProjectViewer';
@@ -21,6 +22,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
           <Route path="/today" element={<ProtectedRoute><Today /></ProtectedRoute>} />
           <Route path="/upcoming" element={<ProtectedRoute><Upcoming /></ProtectedRoute>} />

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_WP_API_URL || 'http://localhost/wp-json/csp/v1',
+  baseURL: import.meta.env.VITE_API_URL || 'http://kaasu-wp.local/wp-json/csp/v1',
   headers: {
     'Content-Type': 'application/json',
   },

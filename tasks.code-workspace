@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "frontend"
+		},
+		{
+			"path": "../../Local Sites/kaasu-wp/app/public/wp-content/plugins/csp-tasks-manager"
+		}
+	],
+	"settings": {}
+}
