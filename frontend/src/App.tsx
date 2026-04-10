@@ -23,15 +23,12 @@ const AppContent = () => {
       <Routes>
         <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/" />} />
         <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/" />} />
-        
+
         {/* Protected Routes wrapped in Layout */}
         <Route path="/" element={isAuthenticated ? <Layout><Inbox /></Layout> : <Navigate to="/login" />} />
         <Route path="/today" element={isAuthenticated ? <Layout><Today /></Layout> : <Navigate to="/login" />} />
         <Route path="/upcoming" element={isAuthenticated ? <Layout><Upcoming /></Layout> : <Navigate to="/login" />} />
-        <Route path="/filters" element={isAuthenticated ? <Layout><div className="text-white">Filters & Labels View</div></Layout> : <Navigate to="/login" />} />
-        <Route path="/reporting" element={isAuthenticated ? <Layout><div className="text-white">Reporting View</div></Layout> : <Navigate to="/login" />} />
         <Route path="/project/:id" element={isAuthenticated ? <Layout><Project /></Layout> : <Navigate to="/login" />} />
-        
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

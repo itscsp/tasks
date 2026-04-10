@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { CheckCircle2, Circle, MoreHorizontal, Plus, Calendar as CalendarIcon, Tag, Loader2 } from 'lucide-react';
 import classNames from 'classnames';
 import api from '../lib/api';
+import { AddTaskForm } from './AddTaskForm';
+import type { AddedTaskData } from './AddTaskForm';
 
 interface Task {
   id: number;
@@ -79,27 +81,21 @@ const TaskItem = ({ task, onToggle, isSubtask = false }: { task: Task, onToggle:
   );
 };
 
-const TaskForm = ({ onCancel, onSave, projectId }: { onCancel: () => void, onSave: (task: any) => void, projectId: string }) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+const ProjectTaskForm = ({ onCancel, onSave, projectId }: { onCancel: () => void, onSave: (task: any) => void, projectId: string }) => {
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-    
+  const handleSave = async (data: AddedTaskData) => {
     setIsSaving(true);
     try {
       const response = await api.post('/tasks', {
-        title,
-        notes: description,
+        title: data.title,
+        notes: data.description,
         project_id: projectId,
         priority: 4,
-        is_completed: false
+        is_completed: false,
+        due_date: data.dueDate || undefined
       });
       onSave(response.data);
-      setTitle('');
-      setDescription('');
     } catch (err) {
       console.error('Failed to save task', err);
     } finally {
@@ -107,41 +103,7 @@ const TaskForm = ({ onCancel, onSave, projectId }: { onCancel: () => void, onSav
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="border border-[#333] rounded-xl p-4 bg-[#282828] mt-2 mb-4 animate-in slide-in-from-top-2 duration-300">
-      <input
-        autoFocus
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Task name"
-        className="w-full bg-transparent text-[14px] font-medium text-white placeholder:text-gray-500 outline-none mb-2"
-      />
-      <textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Description"
-        className="w-full bg-transparent text-[13px] text-gray-300 placeholder:text-gray-600 outline-none resize-none mb-4"
-        rows={2}
-      />
-      <div className="flex items-center justify-end space-x-3 pt-3 border-t border-[#363636]">
-        <button 
-          type="button" 
-          onClick={onCancel}
-          className="px-3 py-1.5 text-[13px] font-bold text-gray-400 hover:bg-[#363636] rounded-md transition-colors"
-        >
-          Cancel
-        </button>
-        <button 
-          type="submit"
-          disabled={!title.trim() || isSaving}
-          className="px-3 py-1.5 text-[13px] font-bold text-white bg-[#db4c3f] hover:bg-[#c53727] disabled:opacity-50 rounded-md transition-colors flex items-center space-x-2"
-        >
-          {isSaving && <Loader2 className="w-3 h-3 animate-spin" />}
-          <span>Add task</span>
-        </button>
-      </div>
-    </form>
-  );
+  return <AddTaskForm onCancel={onCancel} onSave={handleSave} isSaving={isSaving} />;
 };
 
 export const ProjectViewer = () => {
@@ -223,7 +185,7 @@ export const ProjectViewer = () => {
           <span>Add task</span>
         </button>
       ) : (
-        <TaskForm 
+        <ProjectTaskForm 
           projectId={id!} 
           onCancel={() => setIsAdding(false)} 
           onSave={(newTask) => {
