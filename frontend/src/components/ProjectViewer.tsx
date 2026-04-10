@@ -198,9 +198,13 @@ export const ProjectViewer = () => {
   return (
     <div className="w-full pb-32">
       <div className="mb-8">
-        <h1 className="text-[26px] font-bold text-white mb-2">{project.title}</h1>
+        <div className="flex items-center space-x-1.5 mb-2">
+            <span className="text-[14px] text-gray-500 font-medium">My Projects</span>
+            <span className="text-[14px] text-gray-500 font-medium">/</span>
+        </div>
+        <h1 className="text-[28px] font-bold text-white tracking-tight">{project.title}</h1>
         {project.description && (
-          <p className="text-gray-500 text-[13px]">{project.description}</p>
+          <p className="text-gray-500 text-[13px] mt-2">{project.description}</p>
         )}
       </div>
 

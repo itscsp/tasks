@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import api from '../lib/api';
 import { AddTaskModal } from './AddTaskModal';
 import { TaskDetailModal } from './TaskDetailModal';
+import { AddProjectModal } from './AddProjectModal';
 import { 
   Plus, 
   Search, 
@@ -24,7 +25,17 @@ export const Layout = ({ children }: { children: ReactNode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await api.get('/projects');
+      setProjects(response.data);
+    } catch (err) {
+      console.error('Failed to fetch projects', err);
+    }
+  };
 
   useEffect(() => {
     // Listen for task detail requests
@@ -34,14 +45,6 @@ export const Layout = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const response = await api.get('/projects');
-        setProjects(response.data);
-      } catch (err) {
-        console.error('Failed to fetch projects', err);
-      }
-    };
     fetchProjects();
   }, []);
 
@@ -136,13 +139,16 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           ))}
 
           {/* Projects Section */}
-          <div className="mt-6">
-            <div className="flex items-center justify-between px-2 py-2 group cursor-pointer mb-0.5">
-              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest pl-0.5">My Projects</span>
-              <button className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white transition-all">
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <div className="mt-8">
+              <div className="flex items-center justify-between px-3 mb-2 group">
+                <span className="text-[12px] font-bold text-gray-500 uppercase tracking-wider">Projects</span>
+                <button 
+                  onClick={() => setIsAddProjectModalOpen(true)}
+                  className="p-1 px-1.5 text-gray-400 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
             
             <div className="space-y-0.5">
               {projects.map((project) => (
@@ -188,6 +194,13 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         onClose={() => setSelectedTaskId(null)}
         onTaskUpdated={() => {
           window.dispatchEvent(new Event('task-added'));
+        }}
+      />
+      <AddProjectModal 
+        isOpen={isAddProjectModalOpen}
+        onClose={() => setIsAddProjectModalOpen(false)}
+        onProjectAdded={() => {
+          fetchProjects();
         }}
       />
     </div>

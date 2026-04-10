@@ -11,7 +11,11 @@ import {
   MessageSquare,
   ChevronDown,
   Send,
-  Loader2
+  Loader2,
+  Paperclip,
+  Mic,
+  Smile,
+  Type
 } from 'lucide-react';
 import api from '../lib/api';
 import classNames from 'classnames';
@@ -46,12 +50,12 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   const [task, setTask] = useState<Task | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [isCommentFocused, setIsCommentFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isPostingComment, setIsPostingComment] = useState(false);
 
-  // Local state for immediate UI feedback (debounced fields)
   const [localTitle, setLocalTitle] = useState('');
   const [localNotes, setLocalNotes] = useState('');
 
@@ -79,7 +83,6 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     fetchTaskData();
   }, [taskId]);
 
-  // Debounced API call for title and notes
   const debouncedUpdate = useCallback(
     debounce(async (id: number, updates: Partial<Task>) => {
       try {
@@ -154,6 +157,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
       const response = await api.post(`/tasks/${task.id}/comments`, { content: newComment });
       setComments([response.data, ...comments]);
       setNewComment('');
+      setIsCommentFocused(false);
     } catch (err) {
       console.error('Failed to post comment', err);
     } finally {
@@ -177,7 +181,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
         className="w-full max-w-[860px] h-[85vh] bg-[#282828] rounded-2xl shadow-2xl border border-[#333] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header - More compact */}
+        {/* Header */}
         <div className="px-5 py-2.5 border-b border-[#333] flex items-center justify-between bg-[#2d2d2d]">
           <div className="flex items-center space-x-2 text-gray-400 text-[11px] font-bold uppercase tracking-wider">
             <span className="cursor-pointer hover:text-white transition-colors">Inbox</span>
@@ -191,9 +195,8 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* Main Content Area - Reduced Padding */}
           <div className="flex-1 overflow-y-auto p-8 scrollbar-hide">
-            {/* Title Section - Reduced Spacing */}
+            {/* Title & Notes */}
             <div className="flex items-start space-x-4 mb-4 group">
               <button 
                 onClick={() => handleUpdateImmediate({ is_completed: !task.is_completed })}
@@ -215,14 +218,14 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                   spellCheck="false"
                   value={localNotes}
                   onChange={handleNotesChange}
-                  placeholder="And do Surya namasakara and shambahavi"
-                  className="w-full bg-transparent text-[14px] text-gray-400 placeholder:text-gray-600 outline-none resize-none min-h-[40px] leading-relaxed"
+                  placeholder="Description"
+                  className="w-full bg-transparent text-[14px] text-gray-300 placeholder:text-gray-600 outline-none resize-none min-h-[40px] leading-relaxed"
                   rows={2}
                 />
               </div>
             </div>
 
-            {/* Subtasks Section - More compact */}
+            {/* Subtasks */}
             <div className="mt-4">
               <div className="flex items-center space-x-2 mb-3">
                 <Plus className="w-3.5 h-3.5 text-gray-400" />
@@ -236,8 +239,15 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                     <span className={classNames("text-[14px] text-gray-200", { "line-through text-gray-500": sub.is_completed })}>{sub.title}</span>
                   </div>
                 ))}
-
-                {isAddingSubtask ? (
+                {!isAddingSubtask ? (
+                  <button 
+                    onClick={() => setIsAddingSubtask(true)}
+                    className="flex items-center space-x-2 text-gray-500 hover:text-[#db4c3f] transition-all py-1.5 px-2"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span className="text-[13px]">Add sub-task</span>
+                  </button>
+                ) : (
                   <form onSubmit={handleAddSubtask} className="flex items-center space-x-3 mt-2 bg-[#2d2d2d] p-2.5 rounded-lg border border-[#363636]">
                     <Circle className="w-4 h-4 text-gray-500" />
                     <input 
@@ -247,51 +257,70 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                       placeholder="Add sub-task"
                       className="bg-transparent text-[14px] text-white outline-none flex-1"
                     />
-                    <div className="flex items-center space-x-3">
-                        <button type="submit" className="text-[#db4c3f] text-[12px] font-bold">Add</button>
-                        <button type="button" onClick={() => setIsAddingSubtask(false)} className="text-gray-500 text-[12px]">Cancel</button>
+                    <div className="flex items-center space-x-2">
+                        <button type="submit" className="text-[#db4c3f] text-[12px] font-bold px-2 py-1">Add</button>
+                        <button type="button" onClick={() => setIsAddingSubtask(false)} className="text-gray-500 text-[12px] px-2 py-1">Cancel</button>
                     </div>
                   </form>
-                ) : (
-                  <button 
-                    onClick={() => setIsAddingSubtask(true)}
-                    className="flex items-center space-x-2 text-gray-500 hover:text-[#db4c3f] transition-all py-1.5 px-2"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span className="text-[13px]">Add sub-task</span>
-                  </button>
                 )}
               </div>
             </div>
             
-            {/* Comments Section - Reduced Margins */}
+            {/* Comments */}
             <div className="mt-8 border-t border-[#333]/50 pt-8 pb-10">
               <div className="flex items-center space-x-2 mb-4 text-gray-400">
                 <MessageSquare className="w-4 h-4" />
                 <span className="text-[12px] font-bold text-white uppercase tracking-wider">Comments</span>
               </div>
 
-              {/* Comment Input - More compact */}
-              <form onSubmit={handlePostComment} className="flex space-x-3 mb-6">
-                <div className="w-7 h-7 rounded-full bg-orange-600 flex-shrink-0 flex items-center justify-center text-[10px] font-bold uppercase">Me</div>
-                <div className="flex-1 relative">
-                    <textarea 
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Add a comment..."
-                        className="w-full bg-[#1e1e1e] border border-[#333] rounded-xl p-2.5 text-gray-200 text-[13px] outline-none focus:border-[#444] transition-all resize-none min-h-[60px]"
-                    />
-                    <button 
-                        type="submit"
+              {/* Enhanced Comment Box System */}
+              <div className={classNames("bg-[#2d2d2d]/30 border border-[#333] rounded-xl transition-all duration-300 mb-8 overflow-hidden group/box", {
+                "ring-1 ring-[#db4c3f]/30 border-[#444] bg-[#2d2d2d]/50": isCommentFocused
+              })}>
+                <textarea 
+                  value={newComment}
+                  onFocus={() => setIsCommentFocused(true)}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Comment"
+                  className={classNames("w-full bg-transparent p-4 text-gray-200 text-[13px] outline-none placeholder:text-gray-500 resize-none transition-all", {
+                    "min-h-[120px]": isCommentFocused,
+                    "min-h-[50px]": !isCommentFocused
+                  })}
+                />
+                
+                {(isCommentFocused || newComment.trim()) && (
+                  <div className="flex items-center justify-between p-3 px-4 border-t border-[#333] bg-[#2d2d2d]/40 animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center space-x-4 text-gray-500">
+                        <button type="button" className="hover:text-white transition-colors"><Paperclip className="w-4.5 h-4.5" /></button>
+                        <button type="button" className="hover:text-white transition-colors"><Mic className="w-4.5 h-4.5" /></button>
+                        <button type="button" className="hover:text-white transition-colors"><Smile className="w-4.5 h-4.5" /></button>
+                        <button type="button" className="hover:text-white transition-colors font-bold text-xs">@</button>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <button 
+                        onClick={() => {
+                          setNewComment('');
+                          setIsCommentFocused(false);
+                        }}
+                        type="button" 
+                        className="px-4 py-1.5 bg-[#363636] hover:bg-[#404040] text-[13px] font-bold text-gray-200 rounded-lg transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handlePostComment}
                         disabled={!newComment.trim() || isPostingComment}
-                        className="absolute bottom-2.5 right-2.5 p-1 text-[#db4c3f] hover:bg-[#333] rounded-md transition-all disabled:opacity-50"
-                    >
-                        {isPostingComment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    </button>
-                </div>
-              </form>
+                        className="px-4 py-1.5 bg-[#db4c3f] hover:bg-[#c53727] disabled:opacity-50 text-[13px] font-bold text-white rounded-lg transition-all flex items-center space-x-2"
+                      >
+                        {isPostingComment && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                        <span>Comment</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              {/* Comments List - Compact */}
+              {/* Comments List */}
               <div className="space-y-4">
                 {comments.map(comment => (
                   <div key={comment.id} className="flex space-x-3 group">
@@ -313,7 +342,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
             </div>
           </div>
 
-          {/* Sidebar Area - Refined Spacing */}
+          {/* Sidebar Area */}
           <div className="w-[260px] bg-[#1e1e1e] border-l border-[#333] p-5 space-y-6 overflow-y-auto scrollbar-hide">
             <section>
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Project</h3>
@@ -325,7 +354,6 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                  <ChevronDown className="w-3.5 h-3.5 text-gray-600" />
               </div>
             </section>
-
             <section>
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Due date</h3>
               <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-[#2d2d2d] cursor-pointer transition-all text-red-500/90 font-medium bg-[#282828]/40">
@@ -333,7 +361,6 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                  <span className="text-[12px]">{task.due_date || 'Today'}</span>
               </div>
             </section>
-
             <section>
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Priority</h3>
               <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-[#2d2d2d] cursor-pointer transition-all text-green-500/90 font-medium bg-[#282828]/40">
@@ -341,7 +368,6 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                  <span className="text-[12px]">Priority {task.priority || 4}</span>
               </div>
             </section>
-
             <section>
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Labels</h3>
               <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-[#2d2d2d] cursor-pointer transition-all text-gray-500 bg-[#282828]/40">
