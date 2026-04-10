@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { CustomDatePicker } from './CustomDatePicker';
 
 export interface AddedTaskData {
   title: string;
@@ -45,13 +46,11 @@ export const AddTaskForm = ({ onCancel, onSave, isSaving = false }: AddTaskFormP
         rows={2}
       />
       
-      {/* Date Picker Option */}
+      {/* Custom Date Picker */}
       <div className="mb-4">
-        <input 
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          className="bg-transparent border border-[#363636] text-gray-300 text-[12px] rounded-md px-2 py-1 outline-none focus:border-gray-500 transition-colors cursor-pointer"
+        <CustomDatePicker 
+          value={dueDate} 
+          onChange={setDueDate} 
         />
       </div>
 

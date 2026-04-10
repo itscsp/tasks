@@ -35,3 +35,49 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #444;
 }
+
+/* Custom DayPicker dark theme overrides */
+.rdp-root {
+  --rdp-cell-size: 32px;
+  --rdp-accent-color: #db4c3f;
+  --rdp-background-color: #363636;
+  --rdp-accent-color-dark: #c53727;
+  --rdp-background-color-dark: #404040;
+  --rdp-outline: 2px solid var(--rdp-accent-color);
+  --rdp-outline-selected: 2px solid var(--rdp-accent-color);
+  margin: 0 !important;
+}
+
+.custom-calendar-style .rdp-day {
+  color: #e5e5e5;
+  font-size: 13px;
+  border-radius: 50%;
+}
+
+.custom-calendar-style .rdp-day_outside {
+  color: #555;
+}
+
+.custom-calendar-style .rdp-day_selected,
+.custom-calendar-style .rdp-day_selected:focus-visible,
+.custom-calendar-style .rdp-day_selected:hover {
+  background-color: var(--rdp-accent-color);
+  color: white;
+  font-weight: bold;
+}
+
+.custom-calendar-style .rdp-day:hover:not(.rdp-day_selected) {
+  background-color: #363636;
+}
+
+.custom-calendar-style .rdp-nav_button:hover {
+  background-color: #363636;
+  border-radius: 6px;
+}
+
+.custom-calendar-style .rdp-head_cell {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #888;
+  font-weight: 600;
+}

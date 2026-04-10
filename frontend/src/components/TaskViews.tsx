@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import classNames from 'classnames';
 import api from '../lib/api';
-import { AddTaskForm, AddedTaskData } from './AddTaskForm';
+import { AddTaskForm } from './AddTaskForm';
+import type { AddedTaskData } from './AddTaskForm';
 
 interface Task {
   id: number;

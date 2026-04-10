@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, ChevronDown, Loader2 } from 'lucide-react';
 import api from '../lib/api';
+import { CustomDatePicker } from './CustomDatePicker';
 
 interface AddTaskModalProps {
   isOpen: boolean;
@@ -84,18 +85,8 @@ export const AddTaskModal = ({ isOpen, onClose, onTaskAdded }: AddTaskModalProps
           />
 
           {/* Date Picker Chip */}
-          <div className="flex items-center space-x-2 mb-6">
-            <div className="flex items-center space-x-2 px-2.5 py-1.5 rounded-lg border border-[#363636] text-[13px] font-medium text-green-500 hover:bg-[#363636] cursor-pointer transition-colors group">
-              <Calendar className="w-4 h-4" />
-              <span>Today</span>
-              <X 
-                className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white transition-all ml-1" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDueDate('');
-                }}
-              />
-            </div>
+          <div className="flex items-center space-x-2 mb-6 -ml-2">
+            <CustomDatePicker value={dueDate} onChange={setDueDate} />
             
             {/* User said "rest rest are not needed" so we hide Attachment, Priority, Resminders */}
           </div>
