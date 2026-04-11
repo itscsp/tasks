@@ -44,6 +44,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
     { to: '/', icon: Inbox, label: 'Inbox', color: 'text-sky-400' },
     { to: '/today', icon: Calendar, label: 'Today', color: 'text-green-500' },
     { to: '/upcoming', icon: CalendarDays, label: 'Upcoming', color: 'text-purple-400' },
+    { to: '/calendar', icon: CalendarDays, label: 'Calendar', color: 'text-indigo-400' },
     { to: '/filters', icon: Filter, label: 'Filters & Labels', color: 'text-yellow-500' },
     { to: '/reporting', icon: BarChart3, label: 'Reporting', color: 'text-rose-400' },
   ];

@@ -6,6 +6,7 @@ import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { ProjectViewer as Project } from './components/ProjectViewer';
 import { Inbox, Today, Upcoming } from './components/TaskViews';
+import { FullCalendarPage } from './components/FullCalendarPage';
 
 const AppContent = () => {
   const { isAuthenticated, isLoading } = useContext(AuthContext);
@@ -28,6 +29,7 @@ const AppContent = () => {
         <Route path="/" element={isAuthenticated ? <Layout><Inbox /></Layout> : <Navigate to="/login" />} />
         <Route path="/today" element={isAuthenticated ? <Layout><Today /></Layout> : <Navigate to="/login" />} />
         <Route path="/upcoming" element={isAuthenticated ? <Layout><Upcoming /></Layout> : <Navigate to="/login" />} />
+        <Route path="/calendar" element={isAuthenticated ? <Layout><FullCalendarPage /></Layout> : <Navigate to="/login" />} />
         <Route path="/project/:id" element={isAuthenticated ? <Layout><Project /></Layout> : <Navigate to="/login" />} />
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" />} />
