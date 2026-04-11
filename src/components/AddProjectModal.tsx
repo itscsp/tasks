@@ -5,7 +5,7 @@ import api from '../lib/api';
 interface AddProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProjectAdded: () => void;
+  onProjectAdded: (project: any) => void;
 }
 
 const COLORS = [
@@ -41,11 +41,11 @@ export const AddProjectModal = ({ isOpen, onClose, onProjectAdded }: AddProjectM
 
     setIsLoading(true);
     try {
-      await api.post('/projects', {
+      const response = await api.post('/projects', {
         title: name,
         color: color.hex
       });
-      onProjectAdded();
+      onProjectAdded(response.data);
       setName('');
       onClose();
     } catch (err) {
