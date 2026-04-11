@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthProvider, AuthContext } from './context/AuthContext';
+import { TaskProvider } from './context/TaskContext';
 import { Layout } from './components/Layout';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
@@ -39,7 +40,9 @@ const AppContent = () => {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <TaskProvider>
+        <AppContent />
+      </TaskProvider>
     </AuthProvider>
   );
 }

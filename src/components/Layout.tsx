@@ -5,6 +5,7 @@ import api from '../lib/api';
 import { AddTaskModal } from './AddTaskModal';
 import { TaskDetailModal } from './TaskDetailModal';
 import { AddProjectModal } from './AddProjectModal';
+import { useTasks } from '../context/TaskContext';
 import { 
   Plus, 
   Search, 
@@ -22,20 +23,12 @@ import {
 
 export const Layout = ({ children }: { children: ReactNode }) => {
   const { user } = useContext(AuthContext);
+  const { projects, fetchProjects, addProjectLocally } = useTasks();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [projects, setProjects] = useState<any[]>([]);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
-  const fetchProjects = async () => {
-    try {
-      const response = await api.get('/projects');
-      setProjects(response.data);
-    } catch (err) {
-      console.error('Failed to fetch projects', err);
-    }
-  };
 
   useEffect(() => {
     // Listen for task detail requests
@@ -184,8 +177,8 @@ export const Layout = ({ children }: { children: ReactNode }) => {
       <AddTaskModal 
         isOpen={isAddTaskModalOpen}
         onClose={() => setIsAddTaskModalOpen(false)}
-        onTaskAdded={() => {
-          window.dispatchEvent(new Event('task-added'));
+        onTaskAdded={(newTask) => {
+          addTaskLocally(newTask);
         }}
       />
 
@@ -193,14 +186,14 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         taskId={selectedTaskId}
         onClose={() => setSelectedTaskId(null)}
         onTaskUpdated={() => {
-          window.dispatchEvent(new Event('task-added'));
+          // TaskDetailModal now updates context internally
         }}
       />
       <AddProjectModal 
         isOpen={isAddProjectModalOpen}
         onClose={() => setIsAddProjectModalOpen(false)}
-        onProjectAdded={() => {
-          fetchProjects();
+        onProjectAdded={(newProject) => {
+          addProjectLocally(newProject);
         }}
       />
     </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import api from '../lib/api';
 import { CustomDatePicker } from './CustomDatePicker';
+import { useTasks } from '../context/TaskContext';
 
 interface AddTaskModalProps {
   isOpen: boolean;
@@ -14,22 +15,9 @@ export const AddTaskModal = ({ isOpen, onClose, onTaskAdded }: AddTaskModalProps
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [projectId, setProjectId] = useState<string>('');
-  const [projects, setProjects] = useState<any[]>([]);
+  const { projects } = useTasks();
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      const fetchProjects = async () => {
-        try {
-          const response = await api.get('/projects');
-          setProjects(response.data);
-        } catch (err) {
-          console.error('Failed to fetch projects', err);
-        }
-      };
-      fetchProjects();
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 

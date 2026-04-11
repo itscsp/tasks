@@ -12,6 +12,7 @@ import {
   findTaskInTree
 } from '../lib/taskUtils';
 import type { Task } from '../lib/taskUtils';
+import { useTasks } from '../context/TaskContext';
 
 interface Project {
   id: number;
@@ -48,42 +49,35 @@ const ProjectTaskForm = ({ onCancel, onSave, projectId }: { onCancel: () => void
 
 export const ProjectViewer = () => {
   const { id } = useParams<{ id: string }>();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [project, setProject] = useState<Project | null>(null);
+  const { tasks: allTasks, projects, fetchTasks, updateTaskLocally, addTaskLocally } = useTasks();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
 
+  const project = projects.find(p => p.id.toString() === id);
+  const projectTasks = buildTaskTree(allTasks.filter(t => t.project_id === id && !t.parent_task_id));
+
+  const fetchData = async () => {
+    if (!id) return;
+    setIsLoading(true);
+    await fetchTasks({ project_id: id });
+    setIsLoading(false);
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-      setIsLoading(true);
-      try {
-        const [projectRes, tasksRes] = await Promise.all([
-          api.get(`/projects/${id}`),
-          api.get('/tasks', { params: { project_id: id } })
-        ]);
-        setProject(projectRes.data);
-        setTasks(buildTaskTree(tasksRes.data));
-      } catch (err) {
-        console.error('Failed to fetch project data', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchData();
   }, [id]);
 
   const handleToggle = async (taskId: number) => {
-    const task = findTaskInTree(tasks, taskId);
+    const task = findTaskInTree(projectTasks, taskId);
     if (!task) return;
 
     const nextStatus = !task.is_completed;
-    setTasks(updateTaskInTree(tasks, taskId, { is_completed: nextStatus }));
+    updateTaskLocally(taskId, { is_completed: nextStatus });
 
     try {
       await api.put(`/tasks/${taskId}`, { is_completed: nextStatus });
     } catch (err) {
-      setTasks(updateTaskInTree(tasks, taskId, { is_completed: !nextStatus }));
+      updateTaskLocally(taskId, { is_completed: !nextStatus });
     }
   };
 
@@ -129,7 +123,7 @@ export const ProjectViewer = () => {
           projectId={id!} 
           onCancel={() => setIsAdding(false)} 
           onSave={(newTask) => {
-            setTasks([...tasks, newTask]);
+            addTaskLocally(newTask);
             setIsAdding(false);
           }} 
         />

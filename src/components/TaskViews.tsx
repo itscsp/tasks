@@ -16,9 +16,11 @@ import type { AddedTaskData } from './AddTaskForm';
 import { TaskItem } from './TaskItem';
 import { 
   buildTaskTree, 
-  updateTaskInTree 
+  updateTaskInTree,
+  findTaskInTree 
 } from '../lib/taskUtils';
 import type { Task } from '../lib/taskUtils';
+import { useTasks } from '../context/TaskContext';
 
 // Unified TaskItem is now in its own file
 
@@ -47,58 +49,36 @@ const ViewTaskForm = ({ onCancel, onSave, defaultDueDate }: { onCancel: () => vo
 };
 
 export const Inbox = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { tasks: allTasks, fetchTasks, updateTaskLocally, addTaskLocally } = useTasks();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
 
-  const fetchTasks = async () => {
-    try {
-      const response = await api.get('/tasks');
-      setTasks(buildTaskTree(response.data));
-    } catch (err) {
-      console.error('Failed to fetch tasks', err);
-    } finally {
-      setIsLoading(false);
-    }
+  // Filter inbox tasks and build tree
+  const tasks = buildTaskTree(allTasks.filter(t => !t.project_id && !t.parent_task_id));
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    await fetchTasks({ project_id: '' });
+    setIsLoading(false);
   };
 
   useEffect(() => {
-    fetchTasks();
-    const handleRefresh = () => fetchTasks();
-    window.addEventListener('task-added', handleRefresh);
-    return () => window.removeEventListener('task-added', handleRefresh);
+    fetchData();
   }, []);
 
   const handleToggle = async (id: number) => {
-    // We search the tree for the task to get its current status
-    const findTask = (list: Task[], targetId: number): Task | undefined => {
-      for (const t of list) {
-        if (t.id === targetId) return t;
-        if (t.subtasks) {
-          const found = findTask(t.subtasks, targetId);
-          if (found) return found;
-        }
-      }
-      return undefined;
-    };
-
-    const task = findTask(tasks, id);
+    const task = findTaskInTree(tasks, id);
     if (!task) return;
-
-    // Optimistic update using recursive update utility
     const nextStatus = !task.is_completed;
-    setTasks(updateTaskInTree(tasks, id, { is_completed: nextStatus }));
-
+    updateTaskLocally(id, { is_completed: nextStatus });
     try {
       await api.put(`/tasks/${id}`, { is_completed: nextStatus });
     } catch (err) {
-      console.error('Failed to update task', err);
-      // Rollback
-      setTasks(updateTaskInTree(tasks, id, { is_completed: !nextStatus }));
+      updateTaskLocally(id, { is_completed: !nextStatus });
     }
   };
 
-  if (isLoading) {
+  if (isLoading && tasks.length === 0) {
     return (
       <div className="w-full py-20 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-gray-600 animate-spin" />
@@ -129,7 +109,7 @@ export const Inbox = () => {
         </button>
       ) : (
         <ViewTaskForm onCancel={() => setIsAdding(false)} onSave={(newTask) => {
-          setTasks([...tasks, newTask]);
+          addTaskLocally(newTask);
           setIsAdding(false);
         }} />
       )}
@@ -138,37 +118,32 @@ export const Inbox = () => {
 };
 
 export const Today = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { tasks: allTasks, fetchTasks, updateTaskLocally, addTaskLocally } = useTasks();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
 
-  const fetchTasks = async () => {
-    try {
-      const response = await api.get('/tasks', { params: { due_date: 'today' } });
-      setTasks(buildTaskTree(response.data));
-    } catch (err) {
-      console.error('Failed to fetch today tasks', err);
-    } finally {
-      setIsLoading(false);
-    }
+  const todayStr = new Date().toISOString().split('T')[0];
+  const tasks = buildTaskTree(allTasks.filter(t => t.due_date === todayStr && !t.parent_task_id));
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    await fetchTasks({ due_date: 'today' });
+    setIsLoading(false);
   };
 
   useEffect(() => {
-    fetchTasks();
-    const handleRefresh = () => fetchTasks();
-    window.addEventListener('task-added', handleRefresh);
-    return () => window.removeEventListener('task-added', handleRefresh);
+    fetchData();
   }, []);
 
   const handleToggle = async (id: number) => {
     const task = findTaskInTree(tasks, id);
     if (!task) return;
     const nextStatus = !task.is_completed;
-    setTasks(updateTaskInTree(tasks, id, { is_completed: nextStatus }));
+    updateTaskLocally(id, { is_completed: nextStatus });
     try {
       await api.put(`/tasks/${id}`, { is_completed: nextStatus });
     } catch (err) {
-      setTasks(updateTaskInTree(tasks, id, { is_completed: !nextStatus }));
+      updateTaskLocally(id, { is_completed: !nextStatus });
     }
   };
 
@@ -232,7 +207,7 @@ export const Today = () => {
           defaultDueDate={new Date().toISOString().split('T')[0]} 
           onCancel={() => setIsAdding(false)} 
           onSave={(newTask) => {
-            setTasks([...tasks, newTask]);
+            addTaskLocally(newTask);
             setIsAdding(false);
           }} 
         />
@@ -242,19 +217,14 @@ export const Today = () => {
 };
 
 export const Upcoming = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { tasks: allTasks, fetchTasks, updateTaskLocally, addTaskLocally } = useTasks();
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingForDate, setIsAddingForDate] = useState<string | null>(null);
 
-  const fetchTasks = async () => {
-    try {
-      const response = await api.get('/tasks', { params: { due_date: 'upcoming' } });
-      setTasks(buildTaskTree(response.data));
-    } catch (err) {
-      console.error('Failed to fetch upcoming tasks', err);
-    } finally {
-      setIsLoading(false);
-    }
+  const fetchData = async () => {
+    setIsLoading(true);
+    await fetchTasks({ due_date: 'upcoming' });
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -319,16 +289,17 @@ export const Upcoming = () => {
                 <span className="text-[13px] font-bold text-gray-300">{group.label}</span>
               </div>
               <div className="space-y-1 pl-1">
-                {groupTasks.map(task => (
-                  <TaskItem key={task.id} task={task} onToggle={handleToggle} />
-                ))}
+                {groupTasks.map(task => {
+                  const taskTree = buildTaskTree([task, ...allTasks.filter(t => t.parent_task_id === task.id)]);
+                  return <TaskItem key={task.id} task={taskTree[0]} onToggle={handleToggle} />;
+                })}
                 
                 {isAddingForDate === group.date ? (
                   <ViewTaskForm 
                     defaultDueDate={group.date}
                     onCancel={() => setIsAddingForDate(null)}
                     onSave={(newTask) => {
-                      setTasks([...tasks, newTask]);
+                      addTaskLocally(newTask);
                       setIsAddingForDate(null);
                     }}
                   />

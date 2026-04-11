@@ -20,6 +20,8 @@ import classNames from 'classnames';
 import { debounce } from '../lib/utils';
 import type { Task } from '../lib/taskUtils';
 import { CustomDatePicker } from './CustomDatePicker';
+import { useTasks } from '../context/TaskContext';
+import { findTaskInTree } from '../lib/taskUtils';
 
 interface Comment {
   id: string;
@@ -43,7 +45,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isPostingComment, setIsPostingComment] = useState(false);
-  const [projects, setProjects] = useState<any[]>([]);
+  const { tasks: allTasks, projects, updateTaskLocally, addTaskLocally } = useTasks();
   const [activeDropdown, setActiveDropdown] = useState<'project' | 'priority' | 'labels' | null>(null);
   const [newLabel, setNewLabel] = useState('');
 
@@ -70,25 +72,16 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     }
   };
 
-  const fetchProjects = async () => {
-    try {
-      const response = await api.get('/projects');
-      setProjects(response.data);
-    } catch (err) {
-      console.error('Failed to fetch projects', err);
-    }
-  };
 
   useEffect(() => {
     fetchTaskData();
-    fetchProjects();
   }, [taskId]);
 
   const debouncedUpdate = useCallback(
     debounce(async (id: number, updates: Partial<Task>) => {
       try {
         await api.put(`/tasks/${id}`, updates);
-        window.dispatchEvent(new Event('task-added'));
+        updateTaskLocally(id, updates);
       } catch (err) {
         console.error('Failed to update task', err);
       }
@@ -103,6 +96,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     setLocalTitle(val);
     if (task) {
       setTask({ ...task, title: val });
+      updateTaskLocally(task.id, { title: val });
       debouncedUpdate(task.id, { title: val });
     }
   };
@@ -112,6 +106,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     setLocalNotes(val);
     if (task) {
       setTask({ ...task, notes: val });
+      updateTaskLocally(task.id, { notes: val });
       debouncedUpdate(task.id, { notes: val });
     }
   };
@@ -120,6 +115,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     if (!task) return;
     const updatedTask = { ...task, ...updates };
     setTask(updatedTask);
+    updateTaskLocally(task.id, updates);
     onTaskUpdated(updatedTask);
     try {
       await api.put(`/tasks/${task.id}`, updates);
@@ -138,10 +134,12 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
         parent_task_id: task.id,
         is_completed: false
       });
+      const newTask = response.data;
       setTask({
         ...task,
-        subtasks: [...(task.subtasks || []), response.data]
+        subtasks: [...(task.subtasks || []), newTask]
       });
+      addTaskLocally(newTask);
       setNewSubtaskTitle('');
       setIsAddingSubtask(false);
     } catch (err) {
@@ -161,12 +159,14 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     
     const updatedTask = { ...task, subtasks: updatedSubtasks };
     setTask(updatedTask);
+    updateTaskLocally(subId, { is_completed: nextStatus });
     onTaskUpdated(updatedTask);
 
     try {
       await api.put(`/tasks/${subId}`, { is_completed: nextStatus });
     } catch (err) {
       setTask(task); // Rollback
+      updateTaskLocally(subId, { is_completed: !nextStatus });
     }
   };
 
