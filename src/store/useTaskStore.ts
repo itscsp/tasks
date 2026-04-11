@@ -13,20 +13,27 @@ interface TaskState {
   tasks: Task[];
   projects: Project[];
   isLoading: boolean;
-  fetchTasks: (params?: any) => Promise<void>;
-  fetchProjects: () => Promise<void>;
+  hasFetchedTasks: boolean;
+  hasFetchedProjects: boolean;
+  fetchTasks: (params?: any, force?: boolean) => Promise<void>;
+  fetchProjects: (force?: boolean) => Promise<void>;
+  invalidateTasks: () => void;
   updateTaskLocally: (id: number, updates: Partial<Task>) => void;
   deleteTaskLocally: (id: number) => void;
   addTaskLocally: (task: Task) => void;
   addProjectLocally: (project: Project) => void;
 }
 
-export const useTaskStore = create<TaskState>((set) => ({
+export const useTaskStore = create<TaskState>((set, get) => ({
   tasks: [],
   projects: [],
   isLoading: false,
+  hasFetchedTasks: false,
+  hasFetchedProjects: false,
 
-  fetchTasks: async (params?: any) => {
+  /** Fetch all tasks. Skips the network request if data is already loaded unless force=true. */
+  fetchTasks: async (params?: any, force = false) => {
+    if (!force && get().hasFetchedTasks && !params) return;
     set({ isLoading: true });
     try {
       const response = await api.get('/tasks', { params });
@@ -42,7 +49,8 @@ export const useTaskStore = create<TaskState>((set) => ({
             updated.push(nt);
           }
         });
-        return { tasks: updated };
+        // Mark as fetched only for the base (no params) call
+        return { tasks: updated, hasFetchedTasks: !params ? true : state.hasFetchedTasks };
       });
     } catch (err) {
       console.error('Failed to fetch tasks', err);
@@ -51,10 +59,15 @@ export const useTaskStore = create<TaskState>((set) => ({
     }
   },
 
-  fetchProjects: async () => {
+  /** Force a full re-fetch on the next fetchTasks call. */
+  invalidateTasks: () => set({ hasFetchedTasks: false }),
+
+  /** Fetch projects. Skips the network request if data is already loaded unless force=true. */
+  fetchProjects: async (force = false) => {
+    if (!force && get().hasFetchedProjects) return;
     try {
       const response = await api.get('/projects');
-      set({ projects: response.data });
+      set({ projects: response.data, hasFetchedProjects: true });
     } catch (err) {
       console.error('Failed to fetch projects', err);
     }

@@ -84,7 +84,6 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     debounce(async (id: number, updates: Partial<Task>) => {
       try {
         await api.put(`/tasks/${id}`, updates);
-        updateTaskLocally(id, updates);
       } catch (err) {
         console.error('Failed to update task', err);
       }
@@ -98,8 +97,11 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     const val = e.target.value;
     setLocalTitle(val);
     if (task) {
+      // Update local modal state immediately for smooth typing
       setTask({ ...task, title: val });
+      // Sync to global store immediately (local only, no extra API call)
       updateTaskLocally(task.id, { title: val });
+      // Persist to API after user stops typing (debounced, no redundant local update)
       debouncedUpdate(task.id, { title: val });
     }
   };
