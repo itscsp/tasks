@@ -30,7 +30,7 @@ jobs:
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: 157.173.216.12
-          username: u392192436.chethanspoojary
+          username: u392192436.chethanspoojary1ftp
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
           server-dir: /tasks/
