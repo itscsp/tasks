@@ -132,6 +132,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
       const response = await api.post('/tasks', {
         title: newSubtaskTitle,
         parent_task_id: task.id,
+        project_id: task.project_id,
         is_completed: false
       });
       const newTask = response.data;

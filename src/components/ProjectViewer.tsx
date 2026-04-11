@@ -105,7 +105,7 @@ export const ProjectViewer = () => {
       </div>
 
       <div className="space-y-1">
-        {tasks.map(task => (
+        {projectTasks.map(task => (
           <TaskItem key={task.id} task={task} onToggle={handleToggle} />
         ))}
       </div>
