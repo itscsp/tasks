@@ -38,7 +38,7 @@ body {
 
 /* Custom DayPicker dark theme overrides */
 .rdp-root {
-  --rdp-cell-size: 32px;
+  --rdp-cell-size: 38px;
   --rdp-accent-color: #db4c3f;
   --rdp-background-color: #363636;
   --rdp-accent-color-dark: #c53727;
