@@ -1,25 +1,18 @@
 import { useState, useEffect } from 'react';
 import { 
-  CheckCircle2, 
-  Circle, 
-  Calendar as CalendarIcon, 
-  Tag, 
   Plus, 
   ChevronRight, 
   ChevronLeft,
   Loader2
 } from 'lucide-react';
-import classNames from 'classnames';
 import api from '../lib/api';
 import { AddTaskForm } from './AddTaskForm';
 import type { AddedTaskData } from './AddTaskForm';
 import { TaskItem } from './TaskItem';
 import { 
-  buildTaskTree, 
-  updateTaskInTree,
+  buildTaskTree,
   findTaskInTree 
 } from '../lib/taskUtils';
-import type { Task } from '../lib/taskUtils';
 import { useTasks } from '../context/TaskContext';
 
 // Unified TaskItem is now in its own file
@@ -228,21 +221,18 @@ export const Upcoming = () => {
   };
 
   useEffect(() => {
-    fetchTasks();
-    const handleRefresh = () => fetchTasks();
-    window.addEventListener('task-added', handleRefresh);
-    return () => window.removeEventListener('task-added', handleRefresh);
+    fetchData();
   }, []);
 
   const handleToggle = async (id: number) => {
-    const task = tasks.find(t => t.id === id);
+    const task = findTaskInTree(allTasks, id);
     if (!task) return;
     const nextStatus = !task.is_completed;
-    setTasks(updateTaskInTree(tasks, id, { is_completed: nextStatus }));
+    updateTaskLocally(id, { is_completed: nextStatus });
     try {
       await api.put(`/tasks/${id}`, { is_completed: nextStatus });
     } catch (err) {
-      setTasks(updateTaskInTree(tasks, id, { is_completed: !nextStatus }));
+      updateTaskLocally(id, { is_completed: !nextStatus });
     }
   };
 
@@ -282,14 +272,14 @@ export const Upcoming = () => {
 
       <div className="space-y-12">
         {getUpcomingDates().map((group) => {
-          const groupTasks = tasks.filter(t => t.due_date === group.date);
+          const groupTasks = allTasks.filter(t => t.due_date === group.date && !t.parent_task_id);
           return (
             <div key={group.date} className="relative">
               <div className="sticky top-0 bg-[#1e1e1e] py-1 border-b border-[#282828] mb-2 z-10">
                 <span className="text-[13px] font-bold text-gray-300">{group.label}</span>
               </div>
               <div className="space-y-1 pl-1">
-                {groupTasks.map(task => {
+                {groupTasks.map((task: any) => {
                   const taskTree = buildTaskTree([task, ...allTasks.filter(t => t.parent_task_id === task.id)]);
                   return <TaskItem key={task.id} task={taskTree[0]} onToggle={handleToggle} />;
                 })}

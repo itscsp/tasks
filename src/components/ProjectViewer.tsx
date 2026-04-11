@@ -1,24 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { CheckCircle2, Circle, Plus, Calendar as CalendarIcon, Tag, Loader2 } from 'lucide-react';
-import classNames from 'classnames';
+import { Plus, Loader2 } from 'lucide-react';
 import api from '../lib/api';
 import { AddTaskForm } from './AddTaskForm';
 import type { AddedTaskData } from './AddTaskForm';
 import { TaskItem } from './TaskItem';
 import { 
   buildTaskTree, 
-  updateTaskInTree,
   findTaskInTree
 } from '../lib/taskUtils';
-import type { Task } from '../lib/taskUtils';
 import { useTasks } from '../context/TaskContext';
 
-interface Project {
-  id: number;
-  title: string;
-  description?: string;
-}
 
 // Unified TaskItem is now in its own file
 

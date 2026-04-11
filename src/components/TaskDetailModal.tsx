@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   X, 
   Plus, 
-  Calendar, 
   Tag, 
   Flag, 
   MoreHorizontal, 
@@ -21,7 +20,6 @@ import { debounce } from '../lib/utils';
 import type { Task } from '../lib/taskUtils';
 import { CustomDatePicker } from './CustomDatePicker';
 import { useTasks } from '../context/TaskContext';
-import { findTaskInTree } from '../lib/taskUtils';
 
 interface Comment {
   id: string;
@@ -45,7 +43,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isPostingComment, setIsPostingComment] = useState(false);
-  const { tasks: allTasks, projects, updateTaskLocally, addTaskLocally } = useTasks();
+  const { projects, updateTaskLocally, addTaskLocally } = useTasks();
   const [activeDropdown, setActiveDropdown] = useState<'project' | 'priority' | 'labels' | null>(null);
   const [newLabel, setNewLabel] = useState('');
 

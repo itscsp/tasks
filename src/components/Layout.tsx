@@ -1,7 +1,7 @@
 import { type ReactNode, useState, useContext, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import api from '../lib/api';
+import { AuthContext } from '../context/AuthContext';
 import { AddTaskModal } from './AddTaskModal';
 import { TaskDetailModal } from './TaskDetailModal';
 import { AddProjectModal } from './AddProjectModal';
@@ -23,7 +23,7 @@ import {
 
 export const Layout = ({ children }: { children: ReactNode }) => {
   const { user } = useContext(AuthContext);
-  const { projects, fetchProjects, addProjectLocally } = useTasks();
+  const { projects, fetchProjects, addProjectLocally, addTaskLocally } = useTasks();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
@@ -192,7 +192,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
       <AddProjectModal 
         isOpen={isAddProjectModalOpen}
         onClose={() => setIsAddProjectModalOpen(false)}
-        onProjectAdded={(newProject) => {
+        onProjectAdded={(newProject: any) => {
           addProjectLocally(newProject);
         }}
       />
