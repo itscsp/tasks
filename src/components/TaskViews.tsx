@@ -3,7 +3,9 @@ import {
   Plus, 
   ChevronRight, 
   ChevronLeft,
-  Loader2
+  Loader2,
+  Calendar as CalendarIcon,
+  List
 } from 'lucide-react';
 import api from '../lib/api';
 import { AddTaskForm } from './AddTaskForm';
@@ -13,7 +15,9 @@ import {
   buildTaskTree,
   findTaskInTree 
 } from '../lib/taskUtils';
-import { useTasks } from '../context/TaskContext';
+import { useTaskStore } from '../store/useTaskStore';
+import { CalendarView } from './CalendarView';
+import { TaskDetailModal } from './TaskDetailModal';
 
 // Unified TaskItem is now in its own file
 
@@ -42,7 +46,7 @@ const ViewTaskForm = ({ onCancel, onSave, defaultDueDate }: { onCancel: () => vo
 };
 
 export const Inbox = () => {
-  const { tasks: allTasks, fetchTasks, updateTaskLocally, addTaskLocally } = useTasks();
+  const { tasks: allTasks, fetchTasks, updateTaskLocally, addTaskLocally } = useTaskStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
 
@@ -111,7 +115,7 @@ export const Inbox = () => {
 };
 
 export const Today = () => {
-  const { tasks: allTasks, fetchTasks, updateTaskLocally, addTaskLocally } = useTasks();
+  const { tasks: allTasks, fetchTasks, updateTaskLocally, addTaskLocally } = useTaskStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
 
@@ -210,9 +214,11 @@ export const Today = () => {
 };
 
 export const Upcoming = () => {
-  const { tasks: allTasks, fetchTasks, updateTaskLocally, addTaskLocally } = useTasks();
+  const { tasks: allTasks, fetchTasks, updateTaskLocally, addTaskLocally } = useTaskStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingForDate, setIsAddingForDate] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
+  const [selectedTask, setSelectedTask] = useState<any>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -238,7 +244,7 @@ export const Upcoming = () => {
 
   const getUpcomingDates = () => {
     const dates = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 7; i++) {
       const d = new Date();
       d.setDate(d.getDate() + i);
       const dateStr = d.toISOString().split('T')[0];
@@ -249,7 +255,7 @@ export const Upcoming = () => {
     return dates;
   };
 
-  if (isLoading) {
+  if (isLoading && allTasks.length === 0) {
     return (
       <div className="w-full py-20 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-gray-600 animate-spin" />
@@ -263,50 +269,92 @@ export const Upcoming = () => {
         <div>
           <h1 className="text-[26px] font-bold text-white mb-1">Upcoming</h1>
         </div>
-        <div className="flex items-center space-x-1">
-          <button className="p-1 text-gray-500 hover:bg-[#282828] rounded-md transition-all"><ChevronLeft className="w-5 h-5" /></button>
-          <button className="px-2 py-1 bg-[#282828] border border-[#333] rounded text-[11px] font-bold text-gray-300 hover:text-white transition-all">Today</button>
-          <button className="p-1 text-gray-500 hover:bg-[#282828] rounded-md transition-all"><ChevronRight className="w-5 h-5" /></button>
+        <div className="flex items-center bg-[#282828] rounded-lg p-1 border border-[#333]">
+          <button 
+            onClick={() => setViewMode('list')}
+            className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            <List className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => setViewMode('calendar')}
+            className={`p-1.5 rounded-md transition-all ${viewMode === 'calendar' ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            <CalendarIcon className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      <div className="space-y-12">
-        {getUpcomingDates().map((group) => {
-          const groupTasks = allTasks.filter(t => t.due_date === group.date && !t.parent_task_id);
-          return (
-            <div key={group.date} className="relative">
-              <div className="sticky top-0 bg-[#1e1e1e] py-1 border-b border-[#282828] mb-2 z-10">
-                <span className="text-[13px] font-bold text-gray-300">{group.label}</span>
+      {viewMode === 'calendar' ? (
+        <CalendarView 
+          tasks={allTasks} 
+          onAddTask={(date) => setIsAddingForDate(date)} 
+          onTaskClick={(task) => setSelectedTask(task)}
+        />
+      ) : (
+        <div className="space-y-12">
+          {getUpcomingDates().map((group) => {
+            const groupTasks = allTasks.filter(t => t.due_date === group.date && !t.parent_task_id);
+            return (
+              <div key={group.date} className="relative">
+                <div className="sticky top-0 bg-[#1e1e1e] py-1 border-b border-[#282828] mb-2 z-10">
+                  <span className="text-[13px] font-bold text-gray-300">{group.label}</span>
+                </div>
+                <div className="space-y-1 pl-1">
+                  {groupTasks.map((task: any) => {
+                    const taskTree = buildTaskTree([task, ...allTasks.filter(t => t.parent_task_id === task.id)]);
+                    return <TaskItem key={task.id} task={taskTree[0]} onToggle={handleToggle} />;
+                  })}
+                  
+                  {isAddingForDate === group.date ? (
+                    <ViewTaskForm 
+                      defaultDueDate={group.date}
+                      onCancel={() => setIsAddingForDate(null)}
+                      onSave={(newTask) => {
+                        addTaskLocally(newTask);
+                        setIsAddingForDate(null);
+                      }}
+                    />
+                  ) : (
+                    <button 
+                      onClick={() => setIsAddingForDate(group.date)}
+                      className="mt-3 flex items-center space-x-2 text-[#db4c3f] hover:text-[#c53727] text-[13px] font-medium transition-colors p-1 -ml-1 rounded-md hover:bg-[#282828]"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add task</span>
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="space-y-1 pl-1">
-                {groupTasks.map((task: any) => {
-                  const taskTree = buildTaskTree([task, ...allTasks.filter(t => t.parent_task_id === task.id)]);
-                  return <TaskItem key={task.id} task={taskTree[0]} onToggle={handleToggle} />;
-                })}
-                
-                {isAddingForDate === group.date ? (
-                  <ViewTaskForm 
-                    defaultDueDate={group.date}
-                    onCancel={() => setIsAddingForDate(null)}
-                    onSave={(newTask) => {
-                      addTaskLocally(newTask);
-                      setIsAddingForDate(null);
-                    }}
-                  />
-                ) : (
-                  <button 
-                    onClick={() => setIsAddingForDate(group.date)}
-                    className="mt-3 flex items-center space-x-2 text-[#db4c3f] hover:text-[#c53727] text-[13px] font-medium transition-colors p-1 -ml-1 rounded-md hover:bg-[#282828]"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add task</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
+
+      {isAddingForDate && viewMode === 'calendar' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg bg-[#1e1e1e] rounded-xl border border-[#333] p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-4">Add task for {isAddingForDate}</h3>
+            <ViewTaskForm 
+              defaultDueDate={isAddingForDate}
+              onCancel={() => setIsAddingForDate(null)}
+              onSave={(newTask) => {
+                addTaskLocally(newTask);
+                setIsAddingForDate(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {selectedTask && (
+        <TaskDetailModal 
+          isOpen={!!selectedTask} 
+          onClose={() => setSelectedTask(null)} 
+          taskId={selectedTask.id} 
+        />
+      )}
     </div>
   );
 };
+

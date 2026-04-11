@@ -9,7 +9,7 @@ import {
   buildTaskTree, 
   findTaskInTree
 } from '../lib/taskUtils';
-import { useTasks } from '../context/TaskContext';
+import { useTaskStore } from '../store/useTaskStore';
 
 
 // Unified TaskItem is now in its own file
@@ -41,7 +41,7 @@ const ProjectTaskForm = ({ onCancel, onSave, projectId }: { onCancel: () => void
 
 export const ProjectViewer = () => {
   const { id } = useParams<{ id: string }>();
-  const { tasks: allTasks, projects, fetchTasks, updateTaskLocally, addTaskLocally } = useTasks();
+  const { tasks: allTasks, projects, fetchTasks, updateTaskLocally, addTaskLocally } = useTaskStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
 

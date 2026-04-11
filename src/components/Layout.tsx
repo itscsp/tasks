@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { AddTaskModal } from './AddTaskModal';
 import { TaskDetailModal } from './TaskDetailModal';
 import { AddProjectModal } from './AddProjectModal';
-import { useTasks } from '../context/TaskContext';
+import { useTaskStore } from '../store/useTaskStore';
 import { 
   Plus, 
   Search, 
@@ -22,7 +22,7 @@ import {
 
 export const Layout = ({ children }: { children: ReactNode }) => {
   const { user } = useContext(AuthContext);
-  const { projects, fetchProjects, addProjectLocally, addTaskLocally } = useTasks();
+  const { projects, fetchProjects, addProjectLocally, addTaskLocally } = useTaskStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);

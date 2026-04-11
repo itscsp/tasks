@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import api from '../lib/api';
 import { CustomDatePicker } from './CustomDatePicker';
-import { useTasks } from '../context/TaskContext';
+import { useTaskStore } from '../store/useTaskStore';
 
 interface AddTaskModalProps {
   isOpen: boolean;
@@ -15,7 +15,7 @@ export const AddTaskModal = ({ isOpen, onClose, onTaskAdded }: AddTaskModalProps
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [projectId, setProjectId] = useState<string>('');
-  const { projects } = useTasks();
+  const { projects } = useTaskStore();
   const [isSaving, setIsSaving] = useState(false);
 
 

@@ -19,7 +19,7 @@ import classNames from 'classnames';
 import { debounce } from '../lib/utils';
 import type { Task } from '../lib/taskUtils';
 import { CustomDatePicker } from './CustomDatePicker';
-import { useTasks } from '../context/TaskContext';
+import { useTaskStore } from '../store/useTaskStore';
 
 interface Comment {
   id: string;
@@ -43,7 +43,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isPostingComment, setIsPostingComment] = useState(false);
-  const { projects, updateTaskLocally, addTaskLocally } = useTasks();
+  const { projects, updateTaskLocally, addTaskLocally } = useTaskStore();
   const [activeDropdown, setActiveDropdown] = useState<'project' | 'priority' | 'labels' | null>(null);
   const [newLabel, setNewLabel] = useState('');
 
