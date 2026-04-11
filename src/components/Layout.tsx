@@ -14,8 +14,6 @@ import {
   ChevronDown, 
   Bell, 
   LayoutPanelLeft,
-  Filter,
-  BarChart3,
   Menu,
   X
 } from 'lucide-react';
