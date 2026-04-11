@@ -45,8 +45,6 @@ export const Layout = ({ children }: { children: ReactNode }) => {
     { to: '/today', icon: Calendar, label: 'Today', color: 'text-green-500' },
     { to: '/upcoming', icon: CalendarDays, label: 'Upcoming', color: 'text-purple-400' },
     { to: '/calendar', icon: CalendarDays, label: 'Calendar', color: 'text-indigo-400' },
-    { to: '/filters', icon: Filter, label: 'Filters & Labels', color: 'text-yellow-500' },
-    { to: '/reporting', icon: BarChart3, label: 'Reporting', color: 'text-rose-400' },
   ];
 
   return (
@@ -106,10 +104,17 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             <span>Add task</span>
           </button>
           
-          <button className="w-full flex items-center space-x-3 px-2 py-2 text-gray-400 hover:bg-[#363636] rounded-md transition-colors text-[13px]">
+          <NavLink 
+            to="/search"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={({ isActive }) => `
+              w-full flex items-center space-x-3 px-2 py-2 rounded-md transition-colors text-[13px]
+              ${isActive ? 'bg-[#363636] text-white font-medium' : 'text-gray-400 hover:bg-[#363636]'}
+            `}
+          >
             <Search className="w-4 h-4" />
             <span>Search</span>
-          </button>
+          </NavLink>
         </div>
 
         {/* Navigation */}
