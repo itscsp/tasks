@@ -63,11 +63,15 @@ export const Inbox = () => {
   const [isAdding, setIsAdding] = useState(false);
 
   // Filter inbox tasks and build tree
-  const tasks = buildTaskTree(allTasks.filter(t => !t.project_id && !t.parent_task_id));
+  // Handle project_id being '', '0', null, or undefined
+  const tasks = buildTaskTree(allTasks.filter(t => 
+    (!t.project_id || t.project_id === '' || t.project_id === '0') && 
+    !t.parent_task_id
+  ));
 
   const fetchData = async () => {
     setIsLoading(true);
-    await fetchTasks({ project_id: '' });
+    await fetchTasks({});
     setIsLoading(false);
   };
 
@@ -131,12 +135,12 @@ export const Today = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
   const tasks = buildTaskTree(allTasks.filter(t => t.due_date === todayStr && !t.parent_task_id));
 
   const fetchData = async () => {
     setIsLoading(true);
-    await fetchTasks({ due_date: 'today' });
+    await fetchTasks({});
     setIsLoading(false);
   };
 
