@@ -8,14 +8,11 @@ import {
   startOfWeek, 
   endOfWeek, 
   isSameMonth, 
-  isSameDay, 
   addDays, 
-  isToday,
-  parseISO
+  isToday
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import type { Task } from '../lib/taskUtils';
-import { useTaskStore } from '../store/useTaskStore';
 
 interface CalendarViewProps {
   tasks: Task[];
@@ -83,7 +80,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onAddTask, on
     while (day <= endDate) {
       for (let i = 0; i < 7; i++) {
         formattedDate = format(day, 'd');
-        const cloneDay = day;
         const dateStr = format(day, 'yyyy-MM-dd');
         
         // Filter tasks for this specific day

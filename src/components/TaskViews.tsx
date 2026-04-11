@@ -458,7 +458,6 @@ export const Upcoming = () => {
 
       {selectedTask && (
         <TaskDetailModal 
-          isOpen={!!selectedTask} 
           onClose={() => setSelectedTask(null)} 
           taskId={selectedTask.id} 
           onTaskUpdated={() => {}}

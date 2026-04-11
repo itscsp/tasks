@@ -21,7 +21,7 @@ interface TaskState {
   addProjectLocally: (project: Project) => void;
 }
 
-export const useTaskStore = create<TaskState>((set, get) => ({
+export const useTaskStore = create<TaskState>((set) => ({
   tasks: [],
   projects: [],
   isLoading: false,
