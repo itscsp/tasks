@@ -12,7 +12,8 @@ import {
   Loader2,
   Paperclip,
   Mic,
-  Smile
+  Smile,
+  Trash2
 } from 'lucide-react';
 import api from '../lib/api';
 import classNames from 'classnames';
@@ -43,8 +44,8 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isPostingComment, setIsPostingComment] = useState(false);
-  const { projects, updateTaskLocally, addTaskLocally } = useTaskStore();
-  const [activeDropdown, setActiveDropdown] = useState<'project' | 'priority' | 'labels' | null>(null);
+  const { projects, updateTaskLocally, addTaskLocally, deleteTaskLocally } = useTaskStore();
+  const [activeDropdown, setActiveDropdown] = useState<'project' | 'priority' | 'labels' | 'more' | null>(null);
   const [newLabel, setNewLabel] = useState('');
 
   const [localTitle, setLocalTitle] = useState('');
@@ -119,6 +120,18 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
       await api.put(`/tasks/${task.id}`, updates);
     } catch (err) {
       console.error('Failed to update task', err);
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    if (!task || !window.confirm('Are you sure you want to delete this task?')) return;
+    
+    try {
+      await api.delete(`/tasks/${task.id}`);
+      deleteTaskLocally(task.id);
+      onClose();
+    } catch (err) {
+      console.error('Failed to delete task', err);
     }
   };
 
@@ -236,9 +249,33 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
             <span className="text-gray-600">/</span>
             <span className="text-white">Task Details</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <button className="p-1 px-2 text-gray-400 hover:text-white transition-all"><MoreHorizontal className="w-5 h-5" /></button>
+          <div className="flex items-center space-x-2 relative">
+            <button 
+              onClick={() => setActiveDropdown(activeDropdown === 'more' ? null : 'more')}
+              className="p-1 px-2 text-gray-400 hover:text-white transition-all"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
             <button onClick={onClose} className="p-1 px-2 text-gray-400 hover:text-white transition-all"><X className="w-5 h-5" /></button>
+
+            {/* More Actions Dropdown */}
+            {activeDropdown === 'more' && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setActiveDropdown(null)} />
+                <div className="absolute top-full right-0 mt-1 w-48 bg-[#282828] border border-[#333] rounded-lg shadow-xl z-50 py-1 animate-in fade-in zoom-in-95 duration-100">
+                  <button 
+                    onClick={() => {
+                      handleDeleteTask();
+                      setActiveDropdown(null);
+                    }}
+                    className="w-full px-4 py-2 text-left text-[13px] text-red-500 hover:bg-[#333] flex items-center space-x-2 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete task</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
