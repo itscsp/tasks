@@ -18,18 +18,8 @@ import {
 import api from '../lib/api';
 import classNames from 'classnames';
 import { debounce } from '../lib/utils';
-
-interface Task {
-  id: number;
-  title: string;
-  notes?: string;
-  is_completed: boolean;
-  priority: number;
-  due_date?: string;
-  labels: string[];
-  project_id?: string;
-  subtasks?: Task[];
-}
+import type { Task } from '../lib/taskUtils';
+import { CustomDatePicker } from './CustomDatePicker';
 
 interface Comment {
   id: string;
@@ -53,6 +43,9 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isPostingComment, setIsPostingComment] = useState(false);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [activeDropdown, setActiveDropdown] = useState<'project' | 'priority' | 'labels' | null>(null);
+  const [newLabel, setNewLabel] = useState('');
 
   const [localTitle, setLocalTitle] = useState('');
   const [localNotes, setLocalNotes] = useState('');
@@ -77,8 +70,18 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     }
   };
 
+  const fetchProjects = async () => {
+    try {
+      const response = await api.get('/projects');
+      setProjects(response.data);
+    } catch (err) {
+      console.error('Failed to fetch projects', err);
+    }
+  };
+
   useEffect(() => {
     fetchTaskData();
+    fetchProjects();
   }, [taskId]);
 
   const debouncedUpdate = useCallback(
@@ -146,6 +149,27 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     }
   };
 
+  const handleToggleSubtask = async (subId: number) => {
+    if (!task || !task.subtasks) return;
+    const subtask = task.subtasks.find(s => s.id === subId);
+    if (!subtask) return;
+
+    const nextStatus = !subtask.is_completed;
+    const updatedSubtasks = task.subtasks.map(s => 
+      s.id === subId ? { ...s, is_completed: nextStatus } : s
+    );
+    
+    const updatedTask = { ...task, subtasks: updatedSubtasks };
+    setTask(updatedTask);
+    onTaskUpdated(updatedTask);
+
+    try {
+      await api.put(`/tasks/${subId}`, { is_completed: nextStatus });
+    } catch (err) {
+      setTask(task); // Rollback
+    }
+  };
+
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() || !task) return;
@@ -163,6 +187,33 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     }
   };
 
+  const handleLabelRemove = (labelToRemove: string) => {
+    if (!task) return;
+    const updatedLabels = task.labels.filter(l => l !== labelToRemove);
+    handleUpdateImmediate({ labels: updatedLabels });
+  };
+
+  const handleLabelAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLabel.trim() || !task) return;
+    if (task.labels.includes(newLabel.trim())) {
+      setNewLabel('');
+      return;
+    }
+    const updatedLabels = [...task.labels, newLabel.trim()];
+    handleUpdateImmediate({ labels: updatedLabels });
+    setNewLabel('');
+  };
+
+  const getPriorityColor = (p: number) => {
+    switch (p) {
+      case 1: return 'text-red-500';
+      case 2: return 'text-orange-500';
+      case 3: return 'text-blue-500';
+      default: return 'text-gray-500';
+    }
+  };
+
   if (isLoading || !task) {
     return (
       <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -174,9 +225,9 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   }
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
       <div 
-        className="w-full max-w-[860px] h-[85vh] bg-[#282828] rounded-2xl shadow-2xl border border-[#333] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-[860px] h-full sm:h-[85vh] bg-[#282828] rounded-none sm:rounded-2xl shadow-2xl border-none sm:border border-[#333] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -192,8 +243,8 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
           </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-8 scrollbar-hide">
+        <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-5 sm:p-8 scrollbar-hide">
             {/* Title & Notes */}
             <div className="flex items-start space-x-4 mb-4 group">
               <button 
@@ -232,9 +283,20 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
               
               <div className="space-y-1">
                 {task.subtasks?.map(sub => (
-                  <div key={sub.id} className="flex items-center space-x-3 group py-1.5 border-b border-transparent hover:bg-[#2d2d2d] px-2 rounded-lg transition-all">
-                    <Circle className="w-4 h-4 text-gray-500" />
-                    <span className={classNames("text-[14px] text-gray-200", { "line-through text-gray-500": sub.is_completed })}>{sub.title}</span>
+                  <div key={sub.id} className="flex items-center space-x-3 group py-1.5 border-b border-[#333]/30 hover:bg-[#2d2d2d] px-2 rounded-lg transition-all">
+                    <button 
+                      onClick={() => handleToggleSubtask(sub.id)}
+                      className="text-gray-500 hover:text-white transition-colors"
+                    >
+                      {sub.is_completed ? (
+                        <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                      ) : (
+                        <Circle className="w-4 h-4" />
+                      )}
+                    </button>
+                    <span className={classNames("text-[14px] text-gray-200 flex-1", { "line-through text-gray-500": sub.is_completed })}>
+                      {sub.title}
+                    </span>
                   </div>
                 ))}
                 {!isAddingSubtask ? (
@@ -341,36 +403,126 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
           </div>
 
           {/* Sidebar Area */}
-          <div className="w-[260px] bg-[#1e1e1e] border-l border-[#333] p-5 space-y-6 overflow-y-auto scrollbar-hide">
-            <section>
+          <div className="w-full md:w-[260px] bg-[#1e1e1e] border-t md:border-t-0 md:border-l border-[#333] p-5 space-y-6 md:overflow-y-auto scrollbar-hide">
+            <section className="relative">
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Project</h3>
-              <div className="flex items-center justify-between p-2 rounded-lg hover:bg-[#2d2d2d] cursor-pointer transition-all bg-[#282828]/40">
+              <div 
+                onClick={() => setActiveDropdown(activeDropdown === 'project' ? null : 'project')}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-[#2d2d2d] cursor-pointer transition-all bg-[#282828]/40 border border-transparent hover:border-[#333]"
+              >
                  <div className="flex items-center space-x-2">
-                    <span className="text-gray-400 font-bold">#</span>
-                    <span className="text-[12px] text-gray-200">Inbox</span>
+                    <span className="text-[#db4c3f] font-bold">#</span>
+                    <span className="text-[12px] text-gray-200 truncate max-w-[160px]">
+                      {projects.find(p => p.id.toString() === task.project_id)?.title || 'Inbox'}
+                    </span>
                  </div>
-                 <ChevronDown className="w-3.5 h-3.5 text-gray-600" />
+                 <ChevronDown className={classNames("w-3.5 h-3.5 text-gray-600 transition-transform", { "rotate-180": activeDropdown === 'project' })} />
               </div>
+              
+              {activeDropdown === 'project' && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#262626] border border-[#333] rounded-xl shadow-2xl z-50 py-1 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="max-h-[200px] overflow-y-auto scrollbar-hide">
+                    <div 
+                      onClick={() => {
+                        handleUpdateImmediate({ project_id: "" });
+                        setActiveDropdown(null);
+                      }}
+                      className="flex items-center space-x-2 px-3 py-2 hover:bg-[#333] cursor-pointer text-[12px] text-gray-300 transition-colors"
+                    >
+                      <span className="text-gray-500 font-bold">#</span>
+                      <span>Inbox</span>
+                    </div>
+                    {projects.map(p => (
+                      <div 
+                        key={p.id}
+                        onClick={() => {
+                          handleUpdateImmediate({ project_id: p.id.toString() });
+                          setActiveDropdown(null);
+                        }}
+                        className="flex items-center space-x-2 px-3 py-2 hover:bg-[#333] cursor-pointer text-[12px] text-gray-300 transition-colors"
+                      >
+                        <span style={{ color: p.color || '#db4c3f' }} className="font-bold">#</span>
+                        <span className="truncate">{p.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
+
             <section>
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Due date</h3>
-              <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-[#2d2d2d] cursor-pointer transition-all text-red-500/90 font-medium bg-[#282828]/40">
-                 <Calendar className="w-4 h-4" />
-                 <span className="text-[12px]">{task.due_date || 'Today'}</span>
+              <div className="bg-[#282828]/40 rounded-lg hover:bg-[#2d2d2d] transition-all border border-transparent hover:border-[#333]">
+                <CustomDatePicker 
+                  value={task.due_date || ''} 
+                  onChange={(date) => handleUpdateImmediate({ due_date: date })} 
+                />
               </div>
             </section>
-            <section>
+
+            <section className="relative">
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Priority</h3>
-              <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-[#2d2d2d] cursor-pointer transition-all text-green-500/90 font-medium bg-[#282828]/40">
-                 <Flag className="w-4 h-4" />
-                 <span className="text-[12px]">Priority {task.priority || 4}</span>
+              <div 
+                onClick={() => setActiveDropdown(activeDropdown === 'priority' ? null : 'priority')}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-[#2d2d2d] cursor-pointer transition-all bg-[#282828]/40 border border-transparent hover:border-[#333]"
+              >
+                 <div className={classNames("flex items-center space-x-3 font-medium text-[12px]", getPriorityColor(task.priority))}>
+                    <Flag className="w-4 h-4 fill-current" />
+                    <span>Priority {task.priority || 4}</span>
+                 </div>
+                 <ChevronDown className={classNames("w-3.5 h-3.5 text-gray-600 transition-transform", { "rotate-180": activeDropdown === 'priority' })} />
               </div>
+
+              {activeDropdown === 'priority' && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#262626] border border-[#333] rounded-xl shadow-2xl z-50 py-1 animate-in fade-in zoom-in-95 duration-200">
+                  {[1, 2, 3, 4].map(p => (
+                    <div 
+                      key={p}
+                      onClick={() => {
+                        handleUpdateImmediate({ priority: p });
+                        setActiveDropdown(null);
+                      }}
+                      className={classNames("flex items-center space-x-3 px-3 py-2 hover:bg-[#333] cursor-pointer text-[12px] transition-colors", getPriorityColor(p))}
+                    >
+                      <Flag className={classNames("w-4 h-4", { "fill-current": p < 4 })} />
+                      <span>Priority {p}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
+
             <section>
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Labels</h3>
-              <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-[#2d2d2d] cursor-pointer transition-all text-gray-500 bg-[#282828]/40">
-                 <Tag className="w-4 h-4" />
-                 <span className="text-[12px]">Add labels</span>
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-1.5 min-h-[32px] p-2 bg-[#282828]/40 rounded-lg border border-dashed border-[#444]">
+                  {task.labels && task.labels.length > 0 ? (
+                    task.labels.map(l => (
+                      <span 
+                        key={l}
+                        onClick={() => handleLabelRemove(l)}
+                        className="flex items-center space-x-1.5 px-2 py-0.5 bg-[#363636] hover:bg-[#444] text-[11px] text-gray-300 rounded-md cursor-pointer transition-colors group/label"
+                      >
+                        <Tag className="w-3 h-3 text-gray-500 group-hover/label:text-gray-300" />
+                        <span>{l}</span>
+                        <X className="w-3 h-3 text-gray-600 group-hover/label:text-gray-300" />
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[11px] text-gray-600 italic px-1">No labels</span>
+                  )}
+                </div>
+                
+                <form onSubmit={handleLabelAdd} className="relative">
+                  <input 
+                    type="text"
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    placeholder="Add label..."
+                    className="w-full bg-[#2d2d2d] border border-[#333] rounded-lg px-3 py-1.5 text-[12px] text-gray-200 outline-none focus:border-[#db4c3f]/50 transition-all pl-8"
+                  />
+                  <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+                </form>
               </div>
             </section>
           </div>
