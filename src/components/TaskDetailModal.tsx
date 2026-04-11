@@ -13,7 +13,8 @@ import {
   Paperclip,
   Mic,
   Smile,
-  Trash2
+  Trash2,
+  PanelRight
 } from 'lucide-react';
 import api from '../lib/api';
 import classNames from 'classnames';
@@ -42,10 +43,13 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   const [isCommentFocused, setIsCommentFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
+  const [isSubmittingSubtask, setIsSubmittingSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isPostingComment, setIsPostingComment] = useState(false);
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
   const { projects, updateTaskLocally, addTaskLocally, deleteTaskLocally } = useTaskStore();
   const [activeDropdown, setActiveDropdown] = useState<'project' | 'priority' | 'labels' | 'more' | null>(null);
+  const [isSidebarOpenOnMobile, setIsSidebarOpenOnMobile] = useState(false);
   const [newLabel, setNewLabel] = useState('');
 
   const [localTitle, setLocalTitle] = useState('');
@@ -124,21 +128,24 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   };
 
   const handleDeleteTask = async () => {
-    if (!task || !window.confirm('Are you sure you want to delete this task?')) return;
+    if (!task || isDeletingTask || !window.confirm('Are you sure you want to delete this task?')) return;
     
+    setIsDeletingTask(true);
     try {
       await api.delete(`/tasks/${task.id}`);
       deleteTaskLocally(task.id);
       onClose();
     } catch (err) {
       console.error('Failed to delete task', err);
+      setIsDeletingTask(false);
     }
   };
 
   const handleAddSubtask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSubtaskTitle.trim() || !task) return;
+    if (!newSubtaskTitle.trim() || !task || isSubmittingSubtask) return;
 
+    setIsSubmittingSubtask(true);
     try {
       const response = await api.post('/tasks', {
         title: newSubtaskTitle,
@@ -156,6 +163,8 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
       setIsAddingSubtask(false);
     } catch (err) {
       console.error('Failed to add subtask', err);
+    } finally {
+      setIsSubmittingSubtask(false);
     }
   };
 
@@ -256,6 +265,12 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>
+            <button 
+              onClick={() => setIsSidebarOpenOnMobile(!isSidebarOpenOnMobile)}
+              className="p-1 px-2 text-gray-400 hover:text-white transition-all md:hidden"
+            >
+              <PanelRight className={classNames("w-5 h-5", { "text-[#db4c3f]": isSidebarOpenOnMobile })} />
+            </button>
             <button onClick={onClose} className="p-1 px-2 text-gray-400 hover:text-white transition-all"><X className="w-5 h-5" /></button>
 
             {/* More Actions Dropdown */}
@@ -264,14 +279,15 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                 <div className="fixed inset-0 z-40" onClick={() => setActiveDropdown(null)} />
                 <div className="absolute top-full right-0 mt-1 w-48 bg-[#282828] border border-[#333] rounded-lg shadow-xl z-50 py-1 animate-in fade-in zoom-in-95 duration-100">
                   <button 
+                    disabled={isDeletingTask}
                     onClick={() => {
                       handleDeleteTask();
                       setActiveDropdown(null);
                     }}
-                    className="w-full px-4 py-2 text-left text-[13px] text-red-500 hover:bg-[#333] flex items-center space-x-2 transition-colors"
+                    className="w-full px-4 py-2 text-left text-[13px] text-red-500 hover:bg-[#333] flex items-center space-x-2 transition-colors disabled:opacity-50"
                   >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Delete task</span>
+                    {isDeletingTask ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    <span>{isDeletingTask ? 'Deleting...' : 'Delete task'}</span>
                   </button>
                 </div>
               </>
@@ -354,7 +370,14 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                       className="bg-transparent text-[14px] text-white outline-none flex-1"
                     />
                     <div className="flex items-center space-x-2">
-                        <button type="submit" className="text-[#db4c3f] text-[12px] font-bold px-2 py-1">Add</button>
+                        <button 
+                          type="submit" 
+                          disabled={!newSubtaskTitle.trim() || isSubmittingSubtask}
+                          className="text-[#db4c3f] text-[12px] font-bold px-2 py-1 disabled:opacity-50 flex items-center space-x-1"
+                        >
+                          {isSubmittingSubtask && <Loader2 className="w-3 h-3 animate-spin" />}
+                          <span>Add</span>
+                        </button>
                         <button type="button" onClick={() => setIsAddingSubtask(false)} className="text-gray-500 text-[12px] px-2 py-1">Cancel</button>
                     </div>
                   </form>
@@ -439,7 +462,10 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
           </div>
 
           {/* Sidebar Area */}
-          <div className="w-full md:w-[260px] bg-[#1e1e1e] border-t md:border-t-0 md:border-l border-[#333] p-5 space-y-6 md:overflow-y-auto scrollbar-hide">
+          <div className={classNames(
+            "w-full md:w-[260px] bg-[#1e1e1e] border-t md:border-t-0 md:border-l border-[#333] p-5 space-y-6 md:overflow-y-auto scrollbar-hide transition-all",
+            { "hidden md:block": !isSidebarOpenOnMobile, "block": isSidebarOpenOnMobile }
+          )}>
             <section className="relative">
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Project</h3>
               <div 
