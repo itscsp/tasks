@@ -9,6 +9,7 @@ export interface Task {
   project_id?: string;
   parent_task_id?: number;
   subtasks?: Task[];
+  ancestors?: { id: number; title: string }[];
 }
 
 /**

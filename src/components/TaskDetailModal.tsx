@@ -253,10 +253,26 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
       >
         {/* Header */}
         <div className="px-5 py-2.5 border-b border-[#333] flex items-center justify-between bg-[#2d2d2d]">
-          <div className="flex items-center space-x-2 text-gray-400 text-[11px] font-bold uppercase tracking-wider">
-            <span className="cursor-pointer hover:text-white transition-colors">Inbox</span>
-            <span className="text-gray-600">/</span>
-            <span className="text-white">Task Details</span>
+          <div className="flex items-center space-x-2 text-gray-400 text-[11px] font-bold uppercase tracking-wider overflow-hidden max-w-[70%]">
+            <span 
+              onClick={onClose}
+              className="cursor-pointer hover:text-white transition-colors truncate shrink-0"
+            >
+              {projects.find(p => p.id.toString() === task.project_id)?.title || 'Inbox'}
+            </span>
+            <span className="text-gray-600 shrink-0">/</span>
+            {task.ancestors?.map(ancestor => (
+              <React.Fragment key={ancestor.id}>
+                <span 
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-task-detail', { detail: ancestor.id }))}
+                  className="cursor-pointer hover:text-white transition-colors truncate max-w-[120px] shrink-0"
+                >
+                  {ancestor.title}
+                </span>
+                <span className="text-gray-600 shrink-0">/</span>
+              </React.Fragment>
+            ))}
+            <span className="text-white truncate">Task Details</span>
           </div>
           <div className="flex items-center space-x-2 relative">
             <button 
@@ -296,7 +312,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
         </div>
 
         <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-5 sm:p-8 scrollbar-hide">
+          <div className="flex-none md:flex-1 md:overflow-y-auto p-5 sm:p-8 scrollbar-hide">
             {/* Title & Notes */}
             <div className="flex items-start space-x-4 mb-4 group">
               <button 
@@ -346,7 +362,12 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                         <Circle className="w-4 h-4" />
                       )}
                     </button>
-                    <span className={classNames("text-[14px] text-gray-200 flex-1", { "line-through text-gray-500": sub.is_completed })}>
+                    <span 
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-task-detail', { detail: sub.id }))}
+                      className={classNames("text-[14px] text-gray-200 flex-1 cursor-pointer hover:text-[#db4c3f] transition-all", {
+                        "line-through text-gray-500 hover:text-gray-400": sub.is_completed 
+                      })}
+                    >
                       {sub.title}
                     </span>
                   </div>
