@@ -1,3 +1,9 @@
+export interface Attachment {
+  id: number;
+  url: string;
+  name: string;
+}
+
 export interface Task {
   id: number;
   title: string;
@@ -10,6 +16,7 @@ export interface Task {
   parent_task_id?: number;
   subtasks?: Task[];
   ancestors?: { id: number; title: string }[];
+  attachments?: Attachment[];
 }
 
 /**

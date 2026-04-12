@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   X, 
   Plus, 
@@ -14,12 +14,16 @@ import {
   Mic,
   Smile,
   Trash2,
-  PanelRight
+  PanelRight,
+  FileText,
+  Image,
+  Download,
+  Upload
 } from 'lucide-react';
 import api from '../lib/api';
 import classNames from 'classnames';
 import { debounce } from '../lib/utils';
-import type { Task } from '../lib/taskUtils';
+import type { Task, Attachment } from '../lib/taskUtils';
 import { CustomDatePicker } from './CustomDatePicker';
 import { useTaskStore } from '../store/useTaskStore';
 
@@ -47,6 +51,8 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isPostingComment, setIsPostingComment] = useState(false);
   const [isDeletingTask, setIsDeletingTask] = useState(false);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { projects, updateTaskLocally, addTaskLocally, deleteTaskLocally } = useTaskStore();
   const [activeDropdown, setActiveDropdown] = useState<'project' | 'priority' | 'labels' | 'more' | null>(null);
   const [isSidebarOpenOnMobile, setIsSidebarOpenOnMobile] = useState(false);
@@ -226,6 +232,64 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     const updatedLabels = [...task.labels, newLabel.trim()];
     handleUpdateImmediate({ labels: updatedLabels });
     setNewLabel('');
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !files.length || !task) return;
+    setIsUploadingAttachment(true);
+    try {
+      const wpBase = (import.meta.env.VITE_API_URL || 'http://kaasu-wp.local/wp-json/csp/v1')
+        .replace('/wp-json/csp/v1', '').replace('/csp/v1', '');
+      const token = localStorage.getItem('csp_token');
+      const uploadedIds: number[] = [];
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', file.name);
+        const res = await fetch(`${wpBase}/wp-json/wp/v2/media`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          uploadedIds.push(data.id);
+        }
+      }
+      if (uploadedIds.length > 0) {
+        const existingIds = (task.attachments || []).map(a => a.id);
+        const updatedIds = [...existingIds, ...uploadedIds];
+        const res = await api.put(`/tasks/${task.id}`, { attachments: updatedIds });
+        const updatedTask = res.data;
+        setTask(updatedTask);
+        updateTaskLocally(task.id, { attachments: updatedTask.attachments });
+      }
+    } catch (err) {
+      console.error('Attachment upload failed', err);
+    } finally {
+      setIsUploadingAttachment(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveAttachment = async (attId: number) => {
+    if (!task) return;
+    const updatedIds = (task.attachments || []).filter(a => a.id !== attId).map(a => a.id);
+    try {
+      const res = await api.put(`/tasks/${task.id}`, { attachments: updatedIds });
+      const updatedTask = res.data;
+      setTask(updatedTask);
+      updateTaskLocally(task.id, { attachments: updatedTask.attachments });
+    } catch (err) {
+      console.error('Failed to remove attachment', err);
+    }
+  };
+
+  const getFileIcon = (name: string) => {
+    const ext = name.split('.').pop()?.toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) return <Image className="w-4 h-4 text-blue-400" />;
+    return <FileText className="w-4 h-4 text-gray-400" />;
   };
 
   const getPriorityColor = (p: number) => {
@@ -408,6 +472,71 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
               </div>
             </div>
             
+            {/* Attachments */}
+            <div className="mt-6 border-t border-[#333]/50 pt-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <Paperclip className="w-3.5 h-3.5 text-gray-400" />
+                  <span className="text-[12px] font-bold text-white uppercase tracking-wider">Attachments</span>
+                  {task.attachments && task.attachments.length > 0 && (
+                    <span className="text-[10px] text-gray-500 bg-[#333] px-1.5 py-0.5 rounded-full">{task.attachments.length}</span>
+                  )}
+                </div>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAttachment}
+                  className="flex items-center space-x-1.5 px-2.5 py-1 text-[12px] text-gray-400 hover:text-white bg-[#2d2d2d] hover:bg-[#363636] rounded-lg border border-[#333] transition-all disabled:opacity-50"
+                >
+                  {isUploadingAttachment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  <span>{isUploadingAttachment ? 'Uploading...' : 'Add file'}</span>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+              </div>
+
+              {task.attachments && task.attachments.length > 0 ? (
+                <div className="space-y-1.5">
+                  {task.attachments.map(att => (
+                    <div key={att.id} className="flex items-center space-x-3 p-2.5 bg-[#2d2d2d]/50 rounded-lg border border-[#333]/60 hover:border-[#444] group/att transition-all">
+                      {getFileIcon(att.name)}
+                      <span className="flex-1 text-[13px] text-gray-300 truncate">{att.name}</span>
+                      <div className="flex items-center space-x-1 opacity-0 group-hover/att:opacity-100 transition-opacity">
+                        <a
+                          href={att.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 text-gray-500 hover:text-blue-400 rounded transition-colors"
+                          title="Download"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                        <button
+                          onClick={() => handleRemoveAttachment(att.id)}
+                          className="p-1.5 text-gray-500 hover:text-red-400 rounded transition-colors"
+                          title="Remove"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-[#333] rounded-xl p-6 text-center cursor-pointer hover:border-[#db4c3f]/40 hover:bg-[#db4c3f]/5 transition-all group/drop"
+                >
+                  <Upload className="w-5 h-5 text-gray-600 group-hover/drop:text-[#db4c3f]/60 mx-auto mb-2 transition-colors" />
+                  <p className="text-[12px] text-gray-600 group-hover/drop:text-gray-500 transition-colors">Click to attach files</p>
+                </div>
+              )}
+            </div>
+
             {/* Comments */}
             <div className="mt-8 border-t border-[#333]/50 pt-8 pb-10">
               <div className="flex items-center space-x-2 mb-4 text-gray-400">
