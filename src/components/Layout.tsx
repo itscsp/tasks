@@ -1,6 +1,6 @@
-import { type ReactNode, useState, useContext, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+import { type ReactNode, useState, useEffect } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { AddTaskModal } from './AddTaskModal';
 import { TaskDetailModal } from './TaskDetailModal';
 import { AddProjectModal } from './AddProjectModal';
@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 
 export const Layout = ({ children }: { children: ReactNode }) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { projects, fetchProjects, addProjectLocally, addTaskLocally } = useTaskStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);

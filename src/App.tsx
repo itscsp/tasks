@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useContext } from 'react';
-import { AuthProvider, AuthContext } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Layout } from './components/Layout';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
@@ -10,7 +9,7 @@ import { FullCalendarPage } from './components/FullCalendarPage';
 import { SearchPage } from './components/SearchPage';
 
 const AppContent = () => {
-  const { isAuthenticated, isLoading } = useContext(AuthContext);
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
