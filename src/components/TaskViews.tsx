@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
-import { 
-  format, 
-  addDays, 
-  startOfDay, 
-  isBefore, 
-  parseISO, 
-  isToday, 
+import {
+  format,
+  addDays,
+  startOfDay,
+  isBefore,
+  parseISO,
+  isToday,
   isTomorrow,
   subDays,
   isSameDay
 } from 'date-fns';
-import { 
-  Plus, 
-  ChevronRight, 
+import {
+  Plus,
+  ChevronRight,
   ChevronLeft,
   Loader2,
   Calendar as CalendarIcon,
@@ -23,9 +23,9 @@ import api from '../lib/api';
 import { AddTaskForm } from './AddTaskForm';
 import type { AddedTaskData } from './AddTaskForm';
 import { TaskItem } from './TaskItem';
-import { 
+import {
   buildTaskTree,
-  findTaskInTree 
+  findTaskInTree
 } from '../lib/taskUtils';
 import { useTaskStore } from '../store/useTaskStore';
 import { CalendarView } from './CalendarView';
@@ -64,8 +64,8 @@ export const Inbox = () => {
 
   // Filter inbox tasks and build tree
   // Handle project_id being '', '0', null, or undefined
-  const tasks = buildTaskTree(allTasks.filter(t => 
-    (!t.project_id || t.project_id === '' || t.project_id === '0') && 
+  const tasks = buildTaskTree(allTasks.filter(t =>
+    (!t.project_id || t.project_id === '' || t.project_id === '0') &&
     !t.parent_task_id
   ));
 
@@ -113,7 +113,7 @@ export const Inbox = () => {
       </div>
 
       {!isAdding ? (
-        <button 
+        <button
           onClick={() => setIsAdding(true)}
           className="mt-4 flex items-center space-x-2 text-[#db4c3f] hover:text-[#c53727] text-[14px] font-medium transition-colors p-2 -ml-2 rounded-md hover:bg-[#282828]"
         >
@@ -183,7 +183,7 @@ export const Today = () => {
         <p className="text-[13px] text-gray-500 max-w-[280px] mb-8 leading-relaxed">
           See everything due today across all your projects.
         </p>
-        <button 
+        <button
           onClick={() => setIsAdding(true)}
           className="flex items-center space-x-2 bg-[#db4c3f] hover:bg-[#c53727] text-white px-4 py-2 rounded-md text-[13px] font-bold transition-all shadow-lg active:scale-95"
         >
@@ -208,7 +208,7 @@ export const Today = () => {
       </div>
 
       {!isAdding ? (
-        <button 
+        <button
           onClick={() => setIsAdding(true)}
           className="mt-4 flex items-center space-x-2 text-[#db4c3f] hover:text-[#c53727] text-[14px] font-medium transition-colors p-2 -ml-2 rounded-md hover:bg-[#282828]"
         >
@@ -216,13 +216,13 @@ export const Today = () => {
           <span>Add task</span>
         </button>
       ) : (
-        <ViewTaskForm 
-          defaultDueDate={new Date().toISOString().split('T')[0]} 
-          onCancel={() => setIsAdding(false)} 
+        <ViewTaskForm
+          defaultDueDate={new Date().toISOString().split('T')[0]}
+          onCancel={() => setIsAdding(false)}
           onSave={(newTask) => {
             addTaskLocally(newTask);
             setIsAdding(false);
-          }} 
+          }}
         />
       )}
     </div>
@@ -235,7 +235,7 @@ export const Upcoming = () => {
   const [isAddingForDate, setIsAddingForDate] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [isOverdueExpanded, setIsOverdueExpanded] = useState(true);
+  const [isOverdueExpanded, setIsOverdueExpanded] = useState(false);
   const [baseDate, setBaseDate] = useState(new Date());
 
   const fetchData = async () => {
@@ -278,7 +278,7 @@ export const Upcoming = () => {
   const getUpcomingGroups = () => {
     const groups: { date: string, label: string }[] = [];
     const today = startOfDay(new Date());
-    
+
     // 1. Ensure at least the next 7 days are included
     for (let i = 0; i < 7; i++) {
       const d = addDays(today, i);
@@ -324,13 +324,13 @@ export const Upcoming = () => {
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[24px] font-bold text-white">Upcoming</h1>
           <div className="flex items-center bg-[#282828] rounded-lg p-1 border border-[#333]">
-            <button 
+            <button
               onClick={() => setViewMode('list')}
               className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
             >
               <List className="w-4 h-4" />
             </button>
-            <button 
+            <button
               onClick={() => setViewMode('calendar')}
               className={`p-1.5 rounded-md transition-all ${viewMode === 'calendar' ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
             >
@@ -371,16 +371,16 @@ export const Upcoming = () => {
       </div>
 
       {viewMode === 'calendar' ? (
-        <CalendarView 
-          tasks={allTasks} 
-          onAddTask={(date) => setIsAddingForDate(date)} 
+        <CalendarView
+          tasks={allTasks}
+          onAddTask={(date) => setIsAddingForDate(date)}
           onTaskClick={(task) => setSelectedTask(task)}
         />
       ) : (
         <div className="space-y-4">
           {overdueTasks.length > 0 && (
             <div className="mb-8 group/overdue">
-              <div 
+              <div
                 className="flex items-center justify-between py-2 border-b border-[#282828] cursor-pointer"
                 onClick={() => setIsOverdueExpanded(!isOverdueExpanded)}
               >
@@ -413,9 +413,9 @@ export const Upcoming = () => {
                       const taskTree = buildTaskTree([task, ...allTasks.filter(t => t.parent_task_id === task.id)]);
                       return <TaskItem key={task.id} task={taskTree[0]} onToggle={handleToggle} />;
                     })}
-                    
+
                     {isAddingForDate === group.date ? (
-                      <ViewTaskForm 
+                      <ViewTaskForm
                         defaultDueDate={group.date}
                         onCancel={() => setIsAddingForDate(null)}
                         onSave={(newTask) => {
@@ -424,7 +424,7 @@ export const Upcoming = () => {
                         }}
                       />
                     ) : (
-                      <button 
+                      <button
                         onClick={() => setIsAddingForDate(group.date)}
                         className="mt-3 flex items-center space-x-2 text-gray-500 hover:text-[#db4c3f] text-[13px] font-medium transition-colors p-1 -ml-1 rounded-md group"
                       >
@@ -444,7 +444,7 @@ export const Upcoming = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-lg bg-[#1e1e1e] rounded-xl border border-[#333] p-6 shadow-2xl">
             <h3 className="text-lg font-bold text-white mb-4">Add task for {isAddingForDate}</h3>
-            <ViewTaskForm 
+            <ViewTaskForm
               defaultDueDate={isAddingForDate}
               onCancel={() => setIsAddingForDate(null)}
               onSave={(newTask) => {
@@ -457,10 +457,10 @@ export const Upcoming = () => {
       )}
 
       {selectedTask && (
-        <TaskDetailModal 
-          onClose={() => setSelectedTask(null)} 
-          taskId={selectedTask.id} 
-          onTaskUpdated={() => {}}
+        <TaskDetailModal
+          onClose={() => setSelectedTask(null)}
+          taskId={selectedTask.id}
+          onTaskUpdated={() => { }}
         />
       )}
     </div>
