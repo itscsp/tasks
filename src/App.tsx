@@ -7,6 +7,7 @@ import { ProjectViewer as Project } from './components/ProjectViewer';
 import { Inbox, Today, Upcoming } from './components/TaskViews';
 import { FullCalendarPage } from './components/FullCalendarPage';
 import { SearchPage } from './components/SearchPage';
+import { ArchivePage } from './components/ArchivePage';
 
 const AppContent = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -30,6 +31,7 @@ const AppContent = () => {
         <Route path="/today" element={isAuthenticated ? <Layout><Today /></Layout> : <Navigate to="/login" />} />
         <Route path="/upcoming" element={isAuthenticated ? <Layout><Upcoming /></Layout> : <Navigate to="/login" />} />
         <Route path="/calendar" element={isAuthenticated ? <Layout><FullCalendarPage /></Layout> : <Navigate to="/login" />} />
+        <Route path="/archive" element={isAuthenticated ? <Layout><ArchivePage /></Layout> : <Navigate to="/login" />} />
         <Route path="/search" element={isAuthenticated ? <Layout><SearchPage /></Layout> : <Navigate to="/login" />} />
         <Route path="/project/:id" element={isAuthenticated ? <Layout><Project /></Layout> : <Navigate to="/login" />} />
         {/* Fallback */}

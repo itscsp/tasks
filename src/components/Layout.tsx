@@ -15,7 +15,8 @@ import {
   Bell, 
   LayoutPanelLeft,
   Menu,
-  X
+  X,
+  Archive as ArchiveIcon
 } from 'lucide-react';
 
 export const Layout = ({ children }: { children: ReactNode }) => {
@@ -44,7 +45,10 @@ export const Layout = ({ children }: { children: ReactNode }) => {
     { to: '/today', icon: Calendar, label: 'Today', color: 'text-green-500' },
     { to: '/upcoming', icon: CalendarDays, label: 'Upcoming', color: 'text-purple-400' },
     { to: '/calendar', icon: CalendarDays, label: 'Calendar', color: 'text-indigo-400' },
+    { to: '/archive', icon: ArchiveIcon, label: 'Archive', color: 'text-amber-500' },
   ];
+
+  const activeProjects = projects.filter(p => !p.is_archived);
 
   return (
     <div className="flex h-screen bg-[#1e1e1e] text-[#eee] antialiased overflow-hidden">
@@ -148,7 +152,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
               </div>
             
             <div className="space-y-0.5">
-              {projects.map((project) => (
+              {activeProjects.map((project) => (
                 <NavLink 
                   key={project.id}
                   to={`/project/${project.id}`} 
@@ -163,7 +167,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
                 </NavLink>
               ))}
 
-              {projects.length === 0 && (
+              {activeProjects.length === 0 && (
                 <div className="px-3 py-2 text-[11px] text-gray-600 italic">No projects yet</div>
               )}
             </div>

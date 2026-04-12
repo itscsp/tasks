@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Loader2 } from 'lucide-react';
 import api from '../lib/api';
 import { AddTaskForm } from './AddTaskForm';
@@ -41,9 +41,11 @@ const ProjectTaskForm = ({ onCancel, onSave, projectId }: { onCancel: () => void
 
 export const ProjectViewer = () => {
   const { id } = useParams<{ id: string }>();
-  const { tasks: allTasks, projects, fetchTasks, updateTaskLocally, addTaskLocally } = useTaskStore();
+  const navigate = useNavigate();
+  const { tasks: allTasks, projects, fetchTasks, updateTaskLocally, addTaskLocally, updateProjectLocally } = useTaskStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const project = projects.find(p => p.id.toString() === id);
   const projectTasks = buildTaskTree(allTasks.filter(t => t.project_id === id && !t.parent_task_id));
@@ -73,6 +75,19 @@ export const ProjectViewer = () => {
     }
   };
 
+  const handleArchiveProject = async () => {
+    if (!project || isArchiving || !window.confirm(`Are you sure you want to archive "${project.title}"?`)) return;
+    setIsArchiving(true);
+    try {
+      await api.put(`/projects/${project.id}`, { is_archived: true });
+      updateProjectLocally(project.id, { is_archived: true });
+      navigate('/archive'); // send them to archive page
+    } catch (err) {
+      console.error('Failed to archive project', err);
+      setIsArchiving(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full py-20 flex items-center justify-center">
@@ -85,15 +100,26 @@ export const ProjectViewer = () => {
 
   return (
     <div className="w-full pb-32">
-      <div className="mb-8">
-        <div className="flex items-center space-x-1.5 mb-2">
-            <span className="text-[14px] text-gray-500 font-medium">My Projects</span>
-            <span className="text-[14px] text-gray-500 font-medium">/</span>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <div className="flex items-center space-x-1.5 mb-2">
+              <span className="text-[14px] text-gray-500 font-medium">My Projects</span>
+              <span className="text-[14px] text-gray-500 font-medium">/</span>
+          </div>
+          <h1 className="text-[28px] font-bold text-white tracking-tight">{project.title}</h1>
+          {project.description && (
+            <p className="text-gray-500 text-[13px] mt-2">{project.description}</p>
+          )}
         </div>
-        <h1 className="text-[28px] font-bold text-white tracking-tight">{project.title}</h1>
-        {project.description && (
-          <p className="text-gray-500 text-[13px] mt-2">{project.description}</p>
-        )}
+        <div>
+          <button 
+            disabled={isArchiving}
+            onClick={handleArchiveProject}
+            className="px-4 py-2 border border-[#444] text-gray-300 bg-[#2d2d2d] hover:bg-[#363636] hover:text-white rounded-lg text-[13px] font-medium transition-colors disabled:opacity-50"
+          >
+            {isArchiving ? 'Archiving...' : 'Archive Project'}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-1">

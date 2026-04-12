@@ -7,6 +7,7 @@ interface Project {
   title: string;
   color?: string;
   description?: string;
+  is_archived?: boolean;
 }
 
 interface TaskState {
@@ -22,6 +23,7 @@ interface TaskState {
   deleteTaskLocally: (id: number) => void;
   addTaskLocally: (task: Task) => void;
   addProjectLocally: (project: Project) => void;
+  updateProjectLocally: (id: number, updates: Partial<Project>) => void;
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
@@ -127,5 +129,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   addProjectLocally: (project: Project) => {
     set((state) => ({ projects: [...state.projects, project] }));
+  },
+
+  updateProjectLocally: (id: number, updates: Partial<Project>) => {
+    set((state) => ({
+      projects: state.projects.map(p => p.id === id ? { ...p, ...updates } : p)
+    }));
   },
 }));
