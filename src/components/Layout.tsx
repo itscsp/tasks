@@ -1,5 +1,5 @@
 import { type ReactNode, useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AddTaskModal } from './AddTaskModal';
 import { TaskDetailModal } from './TaskDetailModal';
