@@ -23,7 +23,7 @@ import {
 import api from '../lib/api';
 import classNames from 'classnames';
 import { debounce } from '../lib/utils';
-import type { Task, Attachment } from '../lib/taskUtils';
+import type { Task } from '../lib/taskUtils';
 import { CustomDatePicker } from './CustomDatePicker';
 import { useTaskStore } from '../store/useTaskStore';
 

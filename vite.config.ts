@@ -3,11 +3,5 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react({
-    babel: {
-      // Force Babel transform (not OXC) so $RefreshSig$ preamble is 
-      // injected per-file rather than as a separate async script tag.
-      plugins: [],
-    }
-  })],
+  plugins: [react()],
 })

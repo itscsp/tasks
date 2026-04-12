@@ -21,7 +21,6 @@ import {
 
 export const Layout = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { projects, fetchProjects, addProjectLocally, addTaskLocally } = useTaskStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
