@@ -136,7 +136,7 @@ export const Today = () => {
   const [isAdding, setIsAdding] = useState(false);
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const tasks = buildTaskTree(allTasks.filter(t => t.due_date === todayStr && !t.parent_task_id));
+  const tasks = buildTaskTree(allTasks.filter(t => t.due_date === todayStr));
 
   const fetchData = async () => {
     setIsLoading(true);
