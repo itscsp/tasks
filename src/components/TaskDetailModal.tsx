@@ -26,6 +26,8 @@ import { debounce } from '../lib/utils';
 import type { Task } from '../lib/taskUtils';
 import { CustomDatePicker } from './CustomDatePicker';
 import { useTaskStore } from '../store/useTaskStore';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 interface Comment {
   id: string;
@@ -62,7 +64,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   const [localNotes, setLocalNotes] = useState('');
   const [isNotesExpanded, setIsNotesExpanded] = useState(false);
   const [showReadMoreNotes, setShowReadMoreNotes] = useState(false);
-  const notesRef = useRef<HTMLTextAreaElement>(null);
+  const notesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = notesRef.current;
@@ -134,8 +136,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     }
   };
 
-  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const val = e.target.value;
+  const handleNotesChange = (val: string) => {
     setLocalNotes(val);
     if (task) {
       setTask({ ...task, notes: val });
@@ -336,7 +337,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
       <div
-        className="w-full max-w-[860px] h-full sm:h-[85vh] bg-[#282828] rounded-none sm:rounded-2xl shadow-2xl border-none sm:border border-[#333] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full sm:w-[80vw] sm:max-w-none h-full sm:h-[80vh] bg-[#282828] rounded-none sm:rounded-2xl shadow-2xl border-none sm:border border-[#333] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -419,16 +420,22 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                     "text-gray-500 line-through": task.is_completed
                   })}
                 />
-                <div className="relative">
-                  <textarea
-                    ref={notesRef}
-                    spellCheck="false"
-                    value={localNotes}
-                    onChange={handleNotesChange}
-                    placeholder="Description"
-                    className="w-full bg-transparent text-[14px] text-gray-300 placeholder:text-gray-600 outline-none leading-relaxed resize-none overflow-hidden"
-                    rows={1}
-                  />
+                <div className="relative overflow-hidden" ref={notesRef}>
+                  <div className="quill-custom-wrapper pb-2">
+                    <ReactQuill 
+                      theme="snow"
+                      value={localNotes || ''}
+                      onChange={handleNotesChange}
+                      placeholder="Description"
+                      modules={{
+                        toolbar: [
+                          ['bold', 'italic', 'underline', 'strike'],
+                          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                          ['link', 'clean']
+                        ]
+                      }}
+                    />
+                  </div>
                   {!isNotesExpanded && showReadMoreNotes && (
                     <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#282828] via-[#282828]/80 to-transparent pointer-events-none flex items-end py-2">
                       <button
@@ -442,7 +449,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                     </div>
                   )}
                   {isNotesExpanded && showReadMoreNotes && (
-                    <div className="mt-2 flex items-center">
+                    <div className="mt-2 flex items-center mb-1">
                       <button
                         type="button"
                         onClick={() => setIsNotesExpanded(false)}
@@ -664,7 +671,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
 
           {/* Sidebar Area */}
           <div className={classNames(
-            "w-full md:w-[260px] bg-[#1e1e1e] border-t md:border-t-0 md:border-l border-[#333] p-5 space-y-6 md:overflow-y-auto scrollbar-hide transition-all",
+            "w-full md:w-[320px] bg-[#1e1e1e] border-t md:border-t-0 md:border-l border-[#333] p-5 space-y-6 md:overflow-y-auto scrollbar-hide transition-all",
             { "hidden md:block": !isSidebarOpenOnMobile, "block": isSidebarOpenOnMobile }
           )}>
             <section className="relative">
