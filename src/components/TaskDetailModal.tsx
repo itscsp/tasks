@@ -69,11 +69,11 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   useEffect(() => {
     const el = notesRef.current;
     if (!el) return;
-    
+
     // Reset to auto to get actual scroll height based on current text
     el.style.height = 'auto';
     const trueHeight = el.scrollHeight;
-    
+
     if (trueHeight > 500) {
       setShowReadMoreNotes(true);
       el.style.height = isNotesExpanded ? `${trueHeight}px` : '500px';
@@ -324,6 +324,8 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
     }
   };
 
+  const activeProjects = projects.filter(p => !p.is_archived);
+
   if (isLoading || !task) {
     return (
       <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -347,7 +349,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
               onClick={onClose}
               className="cursor-pointer hover:text-white transition-colors truncate shrink-0"
             >
-              {projects.find(p => p.id.toString() === task.project_id)?.title || 'Inbox'}
+              {activeProjects.find(p => p.id.toString() === task.project_id)?.title || 'Inbox'}
             </span>
             <span className="text-gray-600 shrink-0">/</span>
             {task.ancestors?.map(ancestor => (
@@ -422,7 +424,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                 />
                 <div className="relative overflow-hidden" ref={notesRef}>
                   <div className="quill-custom-wrapper pb-2">
-                    <ReactQuill 
+                    <ReactQuill
                       theme="snow"
                       value={localNotes || ''}
                       onChange={handleNotesChange}
@@ -430,7 +432,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                       modules={{
                         toolbar: [
                           ['bold', 'italic', 'underline', 'strike'],
-                          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                          [{ 'list': 'ordered' }, { 'list': 'bullet' }],
                           ['link', 'clean']
                         ]
                       }}
@@ -683,7 +685,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                 <div className="flex items-center space-x-2">
                   <span className="text-[#db4c3f] font-bold">#</span>
                   <span className="text-[12px] text-gray-200 truncate max-w-[160px]">
-                    {projects.find(p => p.id.toString() === task.project_id)?.title || 'Inbox'}
+                    {activeProjects.find(p => p.id.toString() === task.project_id)?.title || 'Inbox'}
                   </span>
                 </div>
                 <ChevronDown className={classNames("w-3.5 h-3.5 text-gray-600 transition-transform", { "rotate-180": activeDropdown === 'project' })} />
@@ -702,7 +704,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                       <span className="text-gray-500 font-bold">#</span>
                       <span>Inbox</span>
                     </div>
-                    {projects.map(p => (
+                    {activeProjects.map(p => (
                       <div
                         key={p.id}
                         onClick={() => {
