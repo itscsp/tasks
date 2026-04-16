@@ -93,7 +93,7 @@ export const FullCalendarPage = () => {
       groups[dateStr].tasks.push(task);
     });
 
-    return Object.entries(groups).sort(([dateA], [dateB]) => dateA.localeCompare(dateB));
+    return Object.entries(groups).sort(([dateA], [dateB]) => dateB.localeCompare(dateA));
   };
 
   if (isLoading && allTasks.length === 0) {
