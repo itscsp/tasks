@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { 
-  CheckCircle2, 
-  Circle, 
-  Calendar as CalendarIcon, 
-  Tag, 
-  ChevronRight, 
+import {
+  CheckCircle2,
+  Circle,
+  Calendar as CalendarIcon,
+  Tag,
+  ChevronRight,
   ChevronDown,
   GitBranch
 } from 'lucide-react';
@@ -26,10 +26,10 @@ export const TaskItem = ({ task, onToggle, isSubtask = false }: TaskItemProps) =
 
   return (
     <div className="flex flex-col">
-      <div 
+      <div
         onClick={() => window.dispatchEvent(new CustomEvent('open-task-detail', { detail: task.id }))}
         className={classNames(
-          "group py-2 transition-all border-b border-transparent hover:border-[#333] animate-in fade-in duration-300 cursor-pointer", 
+          "group py-2 transition-all border-b border-transparent hover:border-[#333] animate-in fade-in duration-300 cursor-pointer",
           { "pl-8": isSubtask }
         )}
       >
@@ -37,7 +37,7 @@ export const TaskItem = ({ task, onToggle, isSubtask = false }: TaskItemProps) =
           {/* Collapse/Expand Toggle - now aligned left of the circle */}
           <div className="mt-1 w-6 flex items-center justify-center mr-1">
             {hasSubtasks && (
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsExpanded(!isExpanded);
@@ -49,7 +49,7 @@ export const TaskItem = ({ task, onToggle, isSubtask = false }: TaskItemProps) =
             )}
           </div>
 
-          <button 
+          <button
             onClick={(e) => {
               e.stopPropagation();
               onToggle(task.id);
@@ -62,11 +62,11 @@ export const TaskItem = ({ task, onToggle, isSubtask = false }: TaskItemProps) =
               <Circle className={isSubtask ? "w-4 h-4" : "w-5 h-5"} />
             )}
           </button>
-          
+
           <div className="flex-1 flex flex-col pt-0.5">
             <div className="flex items-center justify-between">
-              <span className={classNames("text-[14px] transition-all", { 
-                "text-gray-500 line-through": task.is_completed, 
+              <span className={classNames("text-[14px] transition-all", {
+                "text-green-500 ": task.is_completed,
                 "text-gray-200 font-medium": !task.is_completed && !isSubtask,
                 "text-gray-300": isSubtask
               })}>
@@ -109,7 +109,7 @@ export const TaskItem = ({ task, onToggle, isSubtask = false }: TaskItemProps) =
         <div className="relative">
           {/* Vertical Guide Line */}
           <div className="absolute left-[39px] top-0 bottom-4 w-[1px] bg-[#333]" />
-          
+
           <div className="flex flex-col">
             {task.subtasks!.map((sub) => (
               <TaskItem key={sub.id} task={sub} onToggle={onToggle} isSubtask={true} />
