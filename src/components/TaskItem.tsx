@@ -13,7 +13,7 @@ import type { Task } from '../lib/taskUtils';
 
 interface TaskItemProps {
   task: Task;
-  onToggle: (id: number) => void;
+  onToggle: (id: number, virtualDate?: string) => void;
   isSubtask?: boolean;
 }
 
@@ -52,7 +52,7 @@ export const TaskItem = ({ task, onToggle, isSubtask = false }: TaskItemProps) =
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onToggle(task.id);
+              onToggle(task.id, task.virtual_date);
             }}
             className="mt-1 text-gray-500 hover:text-white mr-3 flex-shrink-0 transition-colors"
           >
