@@ -12,7 +12,7 @@ import {
   isToday
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import type { Task } from '../lib/taskUtils';
+import { generateVirtualTasks, type Task } from '../lib/taskUtils';
 
 interface CalendarViewProps {
   tasks: Task[];
@@ -72,6 +72,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onAddTask, on
     const startDate = startOfWeek(monthStart);
     const endDate = endOfWeek(monthEnd);
 
+    const virtualTasks = generateVirtualTasks(tasks, startDate, endDate);
+
     const rows = [];
     let days = [];
     let day = startDate;
@@ -82,8 +84,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onAddTask, on
         formattedDate = format(day, 'd');
         const dateStr = format(day, 'yyyy-MM-dd');
         
-        // Filter tasks for this specific day
-        const dayTasks = tasks.filter(task => {
+        // Filter virtual tasks for this specific day
+        const dayTasks = virtualTasks.filter(task => {
           if (!task.due_date) return false;
           // Handle both format yyyy-MM-dd and potentially others
           return task.due_date.startsWith(dateStr);
@@ -118,9 +120,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onAddTask, on
             <div className="space-y-1 overflow-y-auto max-h-[80px] custom-scrollbar">
               {dayTasks.map((task) => (
                 <div
-                  key={task.id}
+                  key={`${task.id}-${task.virtual_date || task.due_date}`}
                   onClick={() => onTaskClick(task)}
-                  className="text-[11px] px-2 py-1 rounded bg-[#282828] border-l-2 border-[#db4c3f] text-gray-200 truncate cursor-pointer hover:bg-[#333] transition-colors"
+                  className={`text-[11px] px-2 py-1 rounded bg-[#282828] border-l-2 border-[#db4c3f] text-gray-200 truncate cursor-pointer hover:bg-[#333] transition-colors ${task.is_completed ? 'line-through text-gray-500 border-gray-500' : ''}`}
                 >
                   {task.title}
                 </div>

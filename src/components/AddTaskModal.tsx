@@ -14,6 +14,7 @@ export const AddTaskModal = ({ isOpen, onClose, onTaskAdded }: AddTaskModalProps
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [recurrenceType, setRecurrenceType] = useState<'none'|'daily'|'weekly'|'monthly'|'yearly'>('none');
   const [projectId, setProjectId] = useState<string>('');
   const { projects } = useTaskStore();
   const [isSaving, setIsSaving] = useState(false);
@@ -33,7 +34,9 @@ export const AddTaskModal = ({ isOpen, onClose, onTaskAdded }: AddTaskModalProps
         due_date: dueDate,
         project_id: projectId,
         priority: 4,
-        is_completed: false
+        is_completed: false,
+        recurrence_type: recurrenceType,
+        recurrence_interval: 1
       });
       if (onTaskAdded) onTaskAdded(response.data);
       setTitle('');
@@ -76,7 +79,17 @@ export const AddTaskModal = ({ isOpen, onClose, onTaskAdded }: AddTaskModalProps
           <div className="flex items-center space-x-2 mb-6 -ml-2">
             <CustomDatePicker value={dueDate} onChange={setDueDate} />
             
-            {/* User said "rest rest are not needed" so we hide Attachment, Priority, Resminders */}
+            <select
+              value={recurrenceType}
+              onChange={(e) => setRecurrenceType(e.target.value as any)}
+              className="bg-[#363636] text-gray-300 text-[13px] font-bold px-3 py-1.5 rounded-lg outline-none cursor-pointer hover:bg-[#404040] transition-colors"
+            >
+              <option value="none">Does not repeat</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
           </div>
 
           {/* Footer Bar */}

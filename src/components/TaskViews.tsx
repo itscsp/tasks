@@ -8,7 +8,8 @@ import {
   isToday,
   isTomorrow,
   subDays,
-  isSameDay
+  isSameDay,
+  addYears
 } from 'date-fns';
 import {
   Plus,
@@ -136,7 +137,8 @@ export const Today = () => {
   const [isAdding, setIsAdding] = useState(false);
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const tasks = buildTaskTree(allTasks.filter(t => t.due_date === todayStr));
+  const virtualAllTasks = generateVirtualTasks(allTasks, new Date(), new Date());
+  const tasks = buildTaskTree(virtualAllTasks.filter(t => (t.virtual_date || t.due_date) === todayStr));
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -148,15 +150,21 @@ export const Today = () => {
     fetchData();
   }, []);
 
-  const handleToggle = async (id: number) => {
+  const handleToggle = async (id: number, virtualDate?: string) => {
     const task = findTaskInTree(tasks, id);
     if (!task) return;
-    const nextStatus = !task.is_completed;
-    updateTaskLocally(id, { is_completed: nextStatus });
-    try {
-      await api.put(`/tasks/${id}`, { is_completed: nextStatus });
-    } catch (err) {
-      updateTaskLocally(id, { is_completed: !nextStatus });
+    if (virtualDate) {
+      const isVirtualCompleted = task.completed_occurrences?.includes(virtualDate) || false;
+      const nextStatus = !isVirtualCompleted;
+      await useTaskStore.getState().toggleTaskOccurrence(id, virtualDate, nextStatus);
+    } else {
+      const nextStatus = !task.is_completed;
+      updateTaskLocally(id, { is_completed: nextStatus });
+      try {
+        await api.put(`/tasks/${id}`, { is_completed: nextStatus });
+      } catch (err) {
+        updateTaskLocally(id, { is_completed: !nextStatus });
+      }
     }
   };
 
@@ -203,7 +211,7 @@ export const Today = () => {
 
       <div className="space-y-1">
         {tasks.map((task) => (
-          <TaskItem key={task.id} task={task} onToggle={handleToggle} />
+          <TaskItem key={`${task.id}-${task.virtual_date || ''}`} task={task} onToggle={(id) => handleToggle(id, task.virtual_date)} />
         ))}
       </div>
 
@@ -248,15 +256,21 @@ export const Upcoming = () => {
     fetchData();
   }, []);
 
-  const handleToggle = async (id: number) => {
+  const handleToggle = async (id: number, virtualDate?: string) => {
     const task = findTaskInTree(allTasks, id);
     if (!task) return;
-    const nextStatus = !task.is_completed;
-    updateTaskLocally(id, { is_completed: nextStatus });
-    try {
-      await api.put(`/tasks/${id}`, { is_completed: nextStatus });
-    } catch (err) {
-      updateTaskLocally(id, { is_completed: !nextStatus });
+    if (virtualDate) {
+      const isVirtualCompleted = task.completed_occurrences?.includes(virtualDate) || false;
+      const nextStatus = !isVirtualCompleted;
+      await useTaskStore.getState().toggleTaskOccurrence(id, virtualDate, nextStatus);
+    } else {
+      const nextStatus = !task.is_completed;
+      updateTaskLocally(id, { is_completed: nextStatus });
+      try {
+        await api.put(`/tasks/${id}`, { is_completed: nextStatus });
+      } catch (err) {
+        updateTaskLocally(id, { is_completed: !nextStatus });
+      }
     }
   };
 
@@ -291,9 +305,11 @@ export const Upcoming = () => {
     }
 
     // 2. Add any other future dates that have tasks
-    allTasks.forEach(task => {
-      if (task.due_date && !task.is_completed) {
-        const taskDate = parseISO(task.due_date);
+    const virtualTasks = generateVirtualTasks(allTasks, subDays(today, 3), addYears(today, 1));
+    virtualTasks.forEach(task => {
+      const dateVal = task.virtual_date || task.due_date;
+      if (dateVal && !task.is_completed) {
+        const taskDate = parseISO(dateVal);
         if (!isBefore(taskDate, today)) {
           const dateStr = format(taskDate, 'yyyy-MM-dd');
           if (!groups.find(g => g.date === dateStr)) {
@@ -402,7 +418,8 @@ export const Upcoming = () => {
 
           <div className="space-y-10">
             {getUpcomingGroups().map((group) => {
-              const groupTasks = allTasks.filter(t => t.due_date === group.date && !t.parent_task_id);
+              const virtualTasks = generateVirtualTasks(allTasks, subDays(new Date(), 3), addYears(new Date(), 1));
+              const groupTasks = virtualTasks.filter(t => (t.virtual_date || t.due_date) === group.date && !t.parent_task_id);
               return (
                 <div key={group.date} className="relative">
                   <div className="py-2 border-b border-[#282828] mb-4">
@@ -411,7 +428,7 @@ export const Upcoming = () => {
                   <div className="space-y-1 pl-1">
                     {groupTasks.map((task: any) => {
                       const taskTree = buildTaskTree([task, ...allTasks.filter(t => t.parent_task_id === task.id)]);
-                      return <TaskItem key={task.id} task={taskTree[0]} onToggle={handleToggle} />;
+                      return <TaskItem key={`${task.id}-${task.virtual_date || ''}`} task={taskTree[0]} onToggle={(id) => handleToggle(id, task.virtual_date)} />;
                     })}
 
                     {isAddingForDate === group.date ? (

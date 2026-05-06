@@ -38,11 +38,12 @@ interface Comment {
 
 interface TaskDetailModalProps {
   taskId: number | null;
+  virtualDate?: string;
   onClose: () => void;
   onTaskUpdated: (task: Task) => void;
 }
 
-export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailModalProps) => {
+export const TaskDetailModal = ({ taskId, virtualDate, onClose, onTaskUpdated }: TaskDetailModalProps) => {
   const [task, setTask] = useState<Task | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -55,7 +56,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
   const [isDeletingTask, setIsDeletingTask] = useState(false);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { projects, updateTaskLocally, addTaskLocally, deleteTaskLocally } = useTaskStore();
+  const { projects, updateTaskLocally, addTaskLocally, deleteTaskLocally, toggleTaskOccurrence } = useTaskStore();
   const [activeDropdown, setActiveDropdown] = useState<'project' | 'priority' | 'labels' | 'more' | null>(null);
   const [isSidebarOpenOnMobile, setIsSidebarOpenOnMobile] = useState(false);
   const [newLabel, setNewLabel] = useState('');
@@ -407,10 +408,22 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
             {/* Title & Notes */}
             <div className="flex items-start space-x-4 mb-4 group">
               <button
-                onClick={() => handleUpdateImmediate({ is_completed: !task.is_completed })}
+                onClick={async () => {
+                  if (virtualDate) {
+                    const isVirtualCompleted = task.completed_occurrences?.includes(virtualDate) || false;
+                    const nextStatus = !isVirtualCompleted;
+                    const newCompleted = nextStatus 
+                      ? [...(task.completed_occurrences || []), virtualDate]
+                      : (task.completed_occurrences || []).filter(d => d !== virtualDate);
+                    setTask({ ...task, completed_occurrences: newCompleted });
+                    await toggleTaskOccurrence(task.id, virtualDate, nextStatus);
+                  } else {
+                    handleUpdateImmediate({ is_completed: !task.is_completed });
+                  }
+                }}
                 className="mt-1.5 text-gray-500 hover:text-white flex-shrink-0 transition-all scale-110"
               >
-                {task.is_completed ? <CheckCircle2 className="w-6 h-6 text-blue-500" /> : <Circle className="w-6 h-6" />}
+                {(virtualDate ? (task.completed_occurrences?.includes(virtualDate)) : task.is_completed) ? <CheckCircle2 className="w-6 h-6 text-blue-500" /> : <Circle className="w-6 h-6" />}
               </button>
               <div className="flex-1">
                 <input
@@ -419,7 +432,7 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                   value={localTitle}
                   onChange={handleTitleChange}
                   className={classNames("w-full bg-transparent text-[22px] font-bold text-white outline-none mb-0.5 border-b border-transparent focus:border-[#db4c3f]/20 transition-all", {
-                    "text-gray-500 line-through": task.is_completed
+                    "text-gray-500 line-through": (virtualDate ? task.completed_occurrences?.includes(virtualDate) : task.is_completed)
                   })}
                 />
                 <div className="relative overflow-hidden" ref={notesRef}>
@@ -729,6 +742,23 @@ export const TaskDetailModal = ({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                   value={task.due_date || ''}
                   onChange={(date) => handleUpdateImmediate({ due_date: date })}
                 />
+              </div>
+            </section>
+
+            <section>
+              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Recurrence</h3>
+              <div className="bg-[#282828]/40 rounded-lg hover:bg-[#2d2d2d] transition-all border border-transparent hover:border-[#333] p-1">
+                <select
+                  value={task.recurrence_type || 'none'}
+                  onChange={(e) => handleUpdateImmediate({ recurrence_type: e.target.value as any, recurrence_interval: 1 })}
+                  className="w-full bg-transparent text-gray-300 text-[13px] font-medium px-2 py-1.5 rounded outline-none cursor-pointer"
+                >
+                  <option value="none">Does not repeat</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
               </div>
             </section>
 

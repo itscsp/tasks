@@ -24,6 +24,7 @@ interface TaskState {
   addTaskLocally: (task: Task) => void;
   addProjectLocally: (project: Project) => void;
   updateProjectLocally: (id: number, updates: Partial<Project>) => void;
+  toggleTaskOccurrence: (taskId: number, date: string, isCompleted: boolean) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
@@ -135,5 +136,19 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set((state) => ({
       projects: state.projects.map(p => p.id === id ? { ...p, ...updates } : p)
     }));
+  },
+
+  toggleTaskOccurrence: async (taskId: number, date: string, isCompleted: boolean) => {
+    try {
+      const response = await api.post(`/tasks/${taskId}/complete-occurrence`, {
+        date,
+        is_completed: isCompleted,
+      });
+      const updatedTask = response.data;
+      get().updateTaskLocally(taskId, updatedTask);
+    } catch (err) {
+      console.error('Failed to toggle occurrence', err);
+      throw err; // Allow UI to handle failure
+    }
   },
 }));

@@ -5,6 +5,8 @@ import {
   isToday, 
   isTomorrow,
   isYesterday,
+  subMonths,
+  addYears,
 } from 'date-fns';
 import { 
   Loader2,
@@ -14,7 +16,7 @@ import {
 } from 'lucide-react';
 import api from '../lib/api';
 import { TaskItem } from './TaskItem';
-import { buildTaskTree, findTaskInTree } from '../lib/taskUtils';
+import { buildTaskTree, findTaskInTree, generateVirtualTasks } from '../lib/taskUtils';
 import { useTaskStore } from '../store/useTaskStore';
 import { CalendarView } from './CalendarView';
 import { TaskDetailModal } from './TaskDetailModal';
@@ -60,26 +62,40 @@ export const FullCalendarPage = () => {
     load();
   }, [fetchTasks]);
 
-  const handleToggle = async (id: number) => {
+  const handleToggle = async (id: number, virtualDate?: string) => {
     const task = findTaskInTree(allTasks, id);
     if (!task) return;
-    const nextStatus = !task.is_completed;
-    updateTaskLocally(id, { is_completed: nextStatus });
-    try {
-      await api.put(`/tasks/${id}`, { is_completed: nextStatus });
-    } catch (err) {
-      updateTaskLocally(id, { is_completed: !nextStatus });
+
+    if (virtualDate) {
+      const isVirtualCompleted = task.completed_occurrences?.includes(virtualDate) || false;
+      const nextStatus = !isVirtualCompleted;
+      await useTaskStore.getState().toggleTaskOccurrence(id, virtualDate, nextStatus);
+    } else {
+      const nextStatus = !task.is_completed;
+      updateTaskLocally(id, { is_completed: nextStatus });
+      try {
+        await api.put(`/tasks/${id}`, { is_completed: nextStatus });
+      } catch (err) {
+        updateTaskLocally(id, { is_completed: !nextStatus });
+      }
     }
   };
 
   const getGroupedTasks = () => {
     const groups: Record<string, { label: string, tasks: any[] }> = {};
     
+    // Expand tasks from today to 2 years in future for the list view (or rely on what we want to show)
+    // Actually, Calendar list view usually shows past and future.
+    // Let's expand them for the next year to avoid infinite list
+    const startDate = subMonths(new Date(), 1);
+    const endDate = addYears(new Date(), 1);
+    
     // Sort tasks by due date
-    const tasksWithDate = allTasks.filter(t => t.due_date && !t.parent_task_id);
+    const tasksWithDate = generateVirtualTasks(allTasks.filter(t => !t.parent_task_id), startDate, endDate)
+                           .filter(t => t.virtual_date || t.due_date);
     
     tasksWithDate.forEach(task => {
-      const dateStr = task.due_date!;
+      const dateStr = task.virtual_date || task.due_date!;
       if (!groups[dateStr]) {
         const d = parseISO(dateStr);
         let label = format(d, 'd MMM yyyy');
@@ -93,7 +109,7 @@ export const FullCalendarPage = () => {
       groups[dateStr].tasks.push(task);
     });
 
-    return Object.entries(groups).sort(([dateA], [dateB]) => dateB.localeCompare(dateA));
+    return Object.entries(groups).sort(([dateA], [dateB]) => dateA.localeCompare(dateB));
   };
 
   if (isLoading && allTasks.length === 0) {
@@ -150,7 +166,7 @@ export const FullCalendarPage = () => {
                 <div className="space-y-1 pl-1">
                   {group.tasks.map((task: any) => {
                     const taskTree = buildTaskTree([task, ...allTasks.filter(t => t.parent_task_id === task.id)]);
-                    return <TaskItem key={task.id} task={taskTree[0]} onToggle={handleToggle} />;
+                    return <TaskItem key={`${task.id}-${task.virtual_date || ''}`} task={taskTree[0]} onToggle={(id) => handleToggle(id, task.virtual_date)} />;
                   })}
                   
                   {isAddingForDate === dateStr ? (
@@ -198,6 +214,7 @@ export const FullCalendarPage = () => {
         <TaskDetailModal 
           onClose={() => setSelectedTask(null)} 
           taskId={selectedTask.id} 
+          virtualDate={selectedTask.virtual_date}
           onTaskUpdated={() => {}}
         />
       )}
