@@ -69,7 +69,7 @@ export const FullCalendarPage = () => {
     if (virtualDate) {
       if (task.parent_task_id) {
         // This is a subtask of a virtual occurrence
-        const parent = allTasks.find(t => t.id.toString() === task.parent_task_id);
+        const parent = allTasks.find(t => t.id === task.parent_task_id);
         if (parent) {
           const currentCompletions = { ...(parent.subtask_completions || {}) };
           const dateCompletions = currentCompletions[virtualDate] || [];
