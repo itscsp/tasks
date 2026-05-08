@@ -26,7 +26,9 @@ import type { AddedTaskData } from './AddTaskForm';
 import { TaskItem } from './TaskItem';
 import {
   buildTaskTree,
-  findTaskInTree
+  findTaskInTree,
+  generateVirtualTasks,
+  type Task
 } from '../lib/taskUtils';
 import { useTaskStore } from '../store/useTaskStore';
 import { CalendarView } from './CalendarView';
@@ -138,7 +140,7 @@ export const Today = () => {
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const virtualAllTasks = generateVirtualTasks(allTasks, new Date(), new Date());
-  const tasks = buildTaskTree(virtualAllTasks.filter(t => (t.virtual_date || t.due_date) === todayStr));
+  const tasks = buildTaskTree(virtualAllTasks.filter((t: Task) => (t.virtual_date || t.due_date) === todayStr));
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -306,7 +308,7 @@ export const Upcoming = () => {
 
     // 2. Add any other future dates that have tasks
     const virtualTasks = generateVirtualTasks(allTasks, subDays(today, 3), addYears(today, 1));
-    virtualTasks.forEach(task => {
+    virtualTasks.forEach((task: Task) => {
       const dateVal = task.virtual_date || task.due_date;
       if (dateVal && !task.is_completed) {
         const taskDate = parseISO(dateVal);
@@ -419,7 +421,7 @@ export const Upcoming = () => {
           <div className="space-y-10">
             {getUpcomingGroups().map((group) => {
               const virtualTasks = generateVirtualTasks(allTasks, subDays(new Date(), 3), addYears(new Date(), 1));
-              const groupTasks = virtualTasks.filter(t => (t.virtual_date || t.due_date) === group.date && !t.parent_task_id);
+              const groupTasks = virtualTasks.filter((t: Task) => (t.virtual_date || t.due_date) === group.date && !t.parent_task_id);
               return (
                 <div key={group.date} className="relative">
                   <div className="py-2 border-b border-[#282828] mb-4">
