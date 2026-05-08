@@ -27,7 +27,7 @@ export const TaskItem = ({ task, onToggle, isSubtask = false }: TaskItemProps) =
   return (
     <div className="flex flex-col">
       <div
-        onClick={() => window.dispatchEvent(new CustomEvent('open-task-detail', { detail: task.id }))}
+        onClick={() => window.dispatchEvent(new CustomEvent('open-task-detail', { detail: { id: task.id, virtualDate: task.virtual_date } }))}  
         className={classNames(
           "group py-2 transition-all border-b border-transparent hover:border-[#333] animate-in fade-in duration-300 cursor-pointer",
           { "pl-8": isSubtask }

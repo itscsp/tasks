@@ -205,21 +205,49 @@ export const TaskDetailModal = ({ taskId, virtualDate, onClose, onTaskUpdated }:
     const subtask = task.subtasks.find(s => s.id === subId);
     if (!subtask) return;
 
-    const nextStatus = !subtask.is_completed;
-    const updatedSubtasks = task.subtasks.map(s =>
-      s.id === subId ? { ...s, is_completed: nextStatus } : s
-    );
+    if (virtualDate) {
+      const currentCompletions = { ...(task.subtask_completions || {}) };
+      const dateCompletions = currentCompletions[virtualDate] || [];
+      
+      const nextStatus = !dateCompletions.includes(subId);
+      const newDateCompletions = nextStatus 
+        ? [...dateCompletions, subId]
+        : dateCompletions.filter(id => id !== subId);
+      
+      currentCompletions[virtualDate] = newDateCompletions;
+      
+      const updatedSubtasks = task.subtasks.map(s =>
+        s.id === subId ? { ...s, is_completed: nextStatus } : s
+      );
 
-    const updatedTask = { ...task, subtasks: updatedSubtasks };
-    setTask(updatedTask);
-    updateTaskLocally(subId, { is_completed: nextStatus });
-    onTaskUpdated(updatedTask);
+      const updatedTask = { ...task, subtask_completions: currentCompletions, subtasks: updatedSubtasks };
+      setTask(updatedTask);
+      updateTaskLocally(task.id, { subtask_completions: currentCompletions });
+      onTaskUpdated(updatedTask);
 
-    try {
-      await api.put(`/tasks/${subId}`, { is_completed: nextStatus });
-    } catch (err) {
-      setTask(task); // Rollback
-      updateTaskLocally(subId, { is_completed: !nextStatus });
+      try {
+        await api.put(`/tasks/${task.id}`, { subtask_completions: currentCompletions });
+      } catch (err) {
+        console.error('Failed to update subtask completion', err);
+        setTask(task); // Rollback
+      }
+    } else {
+      const nextStatus = !subtask.is_completed;
+      const updatedSubtasks = task.subtasks.map(s =>
+        s.id === subId ? { ...s, is_completed: nextStatus } : s
+      );
+
+      const updatedTask = { ...task, subtasks: updatedSubtasks };
+      setTask(updatedTask);
+      updateTaskLocally(subId, { is_completed: nextStatus });
+      onTaskUpdated(updatedTask);
+
+      try {
+        await api.put(`/tasks/${subId}`, { is_completed: nextStatus });
+      } catch (err) {
+        setTask(task); // Rollback
+        updateTaskLocally(subId, { is_completed: !nextStatus });
+      }
     }
   };
 
@@ -356,7 +384,7 @@ export const TaskDetailModal = ({ taskId, virtualDate, onClose, onTaskUpdated }:
             {task.ancestors?.map(ancestor => (
               <React.Fragment key={ancestor.id}>
                 <span
-                  onClick={() => window.dispatchEvent(new CustomEvent('open-task-detail', { detail: ancestor.id }))}
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-task-detail', { detail: { id: ancestor.id, virtualDate: virtualDate } }))}
                   className="cursor-pointer hover:text-white transition-colors truncate max-w-[120px] shrink-0"
                 >
                   {ancestor.title}
@@ -500,7 +528,7 @@ export const TaskDetailModal = ({ taskId, virtualDate, onClose, onTaskUpdated }:
                       )}
                     </button>
                     <span
-                      onClick={() => window.dispatchEvent(new CustomEvent('open-task-detail', { detail: sub.id }))}
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-task-detail', { detail: { id: sub.id, virtualDate: virtualDate } }))}
                       className={classNames("text-[14px] text-gray-200 flex-1 cursor-pointer hover:text-[#db4c3f] transition-all", {
                         "line-through text-gray-500 hover:text-gray-400": sub.is_completed
                       })}

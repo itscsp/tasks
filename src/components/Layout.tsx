@@ -5,14 +5,14 @@ import { AddTaskModal } from './AddTaskModal';
 import { TaskDetailModal } from './TaskDetailModal';
 import { AddProjectModal } from './AddProjectModal';
 import { useTaskStore } from '../store/useTaskStore';
-import { 
-  Plus, 
-  Search, 
-  Inbox, 
-  Calendar, 
-  CalendarDays, 
-  ChevronDown, 
-  Bell, 
+import {
+  Plus,
+  Search,
+  Inbox,
+  Calendar,
+  CalendarDays,
+  ChevronDown,
+  Bell,
   LayoutPanelLeft,
   Menu,
   X,
@@ -26,11 +26,22 @@ export const Layout = ({ children }: { children: ReactNode }) => {
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [selectedVirtualDate, setSelectedVirtualDate] = useState<string | undefined>(undefined);
 
 
   useEffect(() => {
     // Listen for task detail requests
-    const handleOpenDetail = (e: any) => setSelectedTaskId(e.detail);
+    const handleOpenDetail = (e: any) => {
+      const detail = e.detail;
+      if (typeof detail === 'object' && detail !== null) {
+        setSelectedTaskId(detail.id);
+        setSelectedVirtualDate(detail.virtualDate);
+      } else {
+        // Backwards compat: plain number
+        setSelectedTaskId(detail);
+        setSelectedVirtualDate(undefined);
+      }
+    };
     window.addEventListener('open-task-detail', handleOpenDetail);
     return () => window.removeEventListener('open-task-detail', handleOpenDetail);
   }, []);
@@ -53,7 +64,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
     <div className="flex h-screen bg-[#1e1e1e] text-[#eee] antialiased overflow-hidden">
       {/* Mobile Menu Trigger */}
       {!isMobileMenuOpen && (
-        <button 
+        <button
           onClick={() => setIsMobileMenuOpen(true)}
           className="lg:hidden fixed bottom-6 right-6 w-14 h-14 bg-[#db4c3f] rounded-full shadow-2xl flex items-center justify-center z-50 transition-transform active:scale-90"
         >
@@ -63,7 +74,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
 
       {/* Sidebar Overlay for Mobile */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -98,15 +109,15 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         </div>
 
         <div className="px-3 space-y-0.5">
-          <button 
+          <button
             onClick={() => setIsAddTaskModalOpen(true)}
             className="w-full flex items-center space-x-3 px-2 py-2 text-[#db4c3f] hover:bg-[#363636] rounded-md transition-colors text-[13px] font-medium group"
           >
             <Plus className="w-4 h-4 p-0.5 bg-[#db4c3f] text-white rounded-full group-hover:scale-110 transition-transform" />
             <span>Add task</span>
           </button>
-          
-          <NavLink 
+
+          <NavLink
             to="/search"
             onClick={() => setIsMobileMenuOpen(false)}
             className={({ isActive }) => `
@@ -122,9 +133,9 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         {/* Navigation */}
         <nav className="mt-4 px-3 space-y-0.5 flex-1 overflow-y-auto">
           {navItems.map((item) => (
-            <NavLink 
+            <NavLink
               key={item.to}
-              to={item.to} 
+              to={item.to}
               onClick={() => setIsMobileMenuOpen(false)}
               className={({ isActive }) => `
                 group w-full flex items-center justify-between px-2 py-2 rounded-md transition-colors text-[13px]
@@ -139,22 +150,22 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           ))}
 
           {/* Projects Section */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between px-3 mb-2 group">
-                <span className="text-[12px] font-bold text-gray-500 uppercase tracking-wider">Projects</span>
-                <button 
-                  onClick={() => setIsAddProjectModalOpen(true)}
-                  className="p-1 px-1.5 text-gray-400 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            
+          <div className="mt-8">
+            <div className="flex items-center justify-between px-3 mb-2 group">
+              <span className="text-[12px] font-bold text-gray-500 uppercase tracking-wider">Projects</span>
+              <button
+                onClick={() => setIsAddProjectModalOpen(true)}
+                className="p-1 px-1.5 text-gray-400 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+
             <div className="space-y-0.5">
               {activeProjects.map((project) => (
-                <NavLink 
+                <NavLink
                   key={project.id}
-                  to={`/project/${project.id}`} 
+                  to={`/project/${project.id}`}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={({ isActive }) => `
                     w-full flex items-center space-x-3 px-2 py-2 rounded-md transition-colors text-[13px]
@@ -176,12 +187,12 @@ export const Layout = ({ children }: { children: ReactNode }) => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto bg-[#1e1e1e] relative scroll-smooth">
-        <div className="w-full max-w-[800px] mx-auto pt-16 pb-32 px-6 lg:px-12">
+        <div className="w-full max-w-[90%] mx-auto pt-16 pb-32 px-6 lg:px-12">
           {children}
         </div>
       </main>
 
-      <AddTaskModal 
+      <AddTaskModal
         isOpen={isAddTaskModalOpen}
         onClose={() => setIsAddTaskModalOpen(false)}
         onTaskAdded={(newTask) => {
@@ -189,14 +200,15 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         }}
       />
 
-      <TaskDetailModal 
+      <TaskDetailModal
         taskId={selectedTaskId}
-        onClose={() => setSelectedTaskId(null)}
+        virtualDate={selectedVirtualDate}
+        onClose={() => { setSelectedTaskId(null); setSelectedVirtualDate(undefined); }}
         onTaskUpdated={() => {
           // TaskDetailModal now updates context internally
         }}
       />
-      <AddProjectModal 
+      <AddProjectModal
         isOpen={isAddProjectModalOpen}
         onClose={() => setIsAddProjectModalOpen(false)}
         onProjectAdded={(newProject: any) => {

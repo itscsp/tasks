@@ -21,6 +21,7 @@ export interface Task {
   recurrence_interval?: number;
   recurrence_end_date?: string;
   completed_occurrences?: string[];
+  subtask_completions?: Record<string, number[]>;
   // For virtual tasks:
   virtual_date?: string;
 }
@@ -127,12 +128,21 @@ export const generateVirtualTasks = (tasks: Task[], startDate: Date, endDate: Da
         const dateStr = format(currentDate, 'yyyy-MM-dd');
         const isCompleted = task.completed_occurrences?.includes(dateStr) || false;
         
+        // Handle subtasks for this virtual occurrence
+        const dateCompletions = task.subtask_completions?.[dateStr] || [];
+        const virtualSubtasks = task.subtasks?.map(sub => ({
+          ...sub,
+          is_completed: dateCompletions.includes(sub.id),
+          virtual_date: dateStr // Pass the occurrence date to the subtask
+        }));
+
         virtualTasks.push({
           ...task,
           virtual_date: dateStr,
           is_completed: isCompleted,
           // We override the due_date for the virtual display so UI components sort/show it correctly
           due_date: dateStr,
+          subtasks: virtualSubtasks
         });
       }
 

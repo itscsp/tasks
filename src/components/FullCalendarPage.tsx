@@ -67,9 +67,29 @@ export const FullCalendarPage = () => {
     if (!task) return;
 
     if (virtualDate) {
-      const isVirtualCompleted = task.completed_occurrences?.includes(virtualDate) || false;
-      const nextStatus = !isVirtualCompleted;
-      await useTaskStore.getState().toggleTaskOccurrence(id, virtualDate, nextStatus);
+      if (task.parent_task_id) {
+        // This is a subtask of a virtual occurrence
+        const parent = allTasks.find(t => t.id.toString() === task.parent_task_id);
+        if (parent) {
+          const currentCompletions = { ...(parent.subtask_completions || {}) };
+          const dateCompletions = currentCompletions[virtualDate] || [];
+          const nextStatus = !dateCompletions.includes(id);
+          
+          const newDateCompletions = nextStatus 
+            ? [...dateCompletions, id]
+            : dateCompletions.filter(subId => subId !== id);
+          
+          currentCompletions[virtualDate] = newDateCompletions;
+          
+          updateTaskLocally(parent.id, { subtask_completions: currentCompletions });
+          await api.put(`/tasks/${parent.id}`, { subtask_completions: currentCompletions });
+        }
+      } else {
+        // This is the main task being toggled for a specific date
+        const isVirtualCompleted = task.completed_occurrences?.includes(virtualDate) || false;
+        const nextStatus = !isVirtualCompleted;
+        await useTaskStore.getState().toggleTaskOccurrence(id, virtualDate, nextStatus);
+      }
     } else {
       const nextStatus = !task.is_completed;
       updateTaskLocally(id, { is_completed: nextStatus });
