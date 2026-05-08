@@ -19,6 +19,7 @@ export interface Task {
   attachments?: Attachment[];
   recurrence_type?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
   recurrence_interval?: number;
+  recurrence_end_date?: string;
   completed_occurrences?: string[];
   // For virtual tasks:
   virtual_date?: string;
@@ -116,7 +117,10 @@ export const generateVirtualTasks = (tasks: Task[], startDate: Date, endDate: Da
     const interval = task.recurrence_interval && task.recurrence_interval > 0 ? task.recurrence_interval : 1;
     let safeguard = 0; // Prevent infinite loops
 
-    while (!isAfter(currentDate, endDate) && safeguard < 365 * 5) {
+    const taskEndDate = task.recurrence_end_date ? parseISO(task.recurrence_end_date) : null;
+    const effectiveEndDate = taskEndDate && isValid(taskEndDate) && isBefore(taskEndDate, endDate) ? taskEndDate : endDate;
+
+    while (!isAfter(currentDate, effectiveEndDate) && safeguard < 365 * 5) {
       safeguard++;
 
       if (!isBefore(currentDate, startDate)) {

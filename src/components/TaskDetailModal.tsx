@@ -747,18 +747,31 @@ export const TaskDetailModal = ({ taskId, virtualDate, onClose, onTaskUpdated }:
 
             <section>
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Recurrence</h3>
-              <div className="bg-[#282828]/40 rounded-lg hover:bg-[#2d2d2d] transition-all border border-transparent hover:border-[#333] p-1">
-                <select
-                  value={task.recurrence_type || 'none'}
-                  onChange={(e) => handleUpdateImmediate({ recurrence_type: e.target.value as any, recurrence_interval: 1 })}
-                  className="w-full bg-transparent text-gray-300 text-[13px] font-medium px-2 py-1.5 rounded outline-none cursor-pointer"
-                >
-                  <option value="none">Does not repeat</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
+              <div className="space-y-2">
+                <div className="bg-[#282828]/40 rounded-lg hover:bg-[#2d2d2d] transition-all border border-transparent hover:border-[#333] p-1">
+                  <select
+                    value={task.recurrence_type || 'none'}
+                    onChange={(e) => handleUpdateImmediate({ recurrence_type: e.target.value as any, recurrence_interval: 1 })}
+                    className="w-full bg-transparent text-gray-300 text-[13px] font-medium px-2 py-1.5 rounded outline-none cursor-pointer"
+                  >
+                    <option value="none">Does not repeat</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
+                </div>
+                {task.recurrence_type && task.recurrence_type !== 'none' && (
+                  <div className="bg-[#282828]/40 rounded-lg hover:bg-[#2d2d2d] transition-all border border-transparent hover:border-[#333] p-1 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight pl-2">Until</span>
+                    <div className="w-40">
+                      <CustomDatePicker
+                        value={task.recurrence_end_date || ''}
+                        onChange={(date) => handleUpdateImmediate({ recurrence_end_date: date })}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
 

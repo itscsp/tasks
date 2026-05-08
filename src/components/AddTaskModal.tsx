@@ -15,6 +15,7 @@ export const AddTaskModal = ({ isOpen, onClose, onTaskAdded }: AddTaskModalProps
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [recurrenceType, setRecurrenceType] = useState<'none'|'daily'|'weekly'|'monthly'|'yearly'>('none');
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState<string>('');
   const [projectId, setProjectId] = useState<string>('');
   const { projects } = useTaskStore();
   const [isSaving, setIsSaving] = useState(false);
@@ -36,7 +37,8 @@ export const AddTaskModal = ({ isOpen, onClose, onTaskAdded }: AddTaskModalProps
         priority: 4,
         is_completed: false,
         recurrence_type: recurrenceType,
-        recurrence_interval: 1
+        recurrence_interval: 1,
+        recurrence_end_date: recurrenceEndDate || undefined
       });
       if (onTaskAdded) onTaskAdded(response.data);
       setTitle('');
@@ -90,6 +92,13 @@ export const AddTaskModal = ({ isOpen, onClose, onTaskAdded }: AddTaskModalProps
               <option value="monthly">Monthly</option>
               <option value="yearly">Yearly</option>
             </select>
+
+            {recurrenceType !== 'none' && (
+              <div className="flex items-center space-x-2 pl-2 border-l border-[#333]">
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">Until</span>
+                <CustomDatePicker value={recurrenceEndDate} onChange={setRecurrenceEndDate} />
+              </div>
+            )}
           </div>
 
           {/* Footer Bar */}
