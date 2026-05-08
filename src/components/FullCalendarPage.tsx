@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { 
-  format, 
-  parseISO, 
-  isToday, 
+import {
+  format,
+  parseISO,
+  isToday,
   isTomorrow,
   isYesterday,
   subMonths,
   addYears,
 } from 'date-fns';
-import { 
+import {
   Loader2,
   Calendar as CalendarIcon,
   List,
@@ -74,13 +74,13 @@ export const FullCalendarPage = () => {
           const currentCompletions = { ...(parent.subtask_completions || {}) };
           const dateCompletions = currentCompletions[virtualDate] || [];
           const nextStatus = !dateCompletions.includes(id);
-          
-          const newDateCompletions = nextStatus 
+
+          const newDateCompletions = nextStatus
             ? [...dateCompletions, id]
             : dateCompletions.filter(subId => subId !== id);
-          
+
           currentCompletions[virtualDate] = newDateCompletions;
-          
+
           updateTaskLocally(parent.id, { subtask_completions: currentCompletions });
           await api.put(`/tasks/${parent.id}`, { subtask_completions: currentCompletions });
         }
@@ -103,17 +103,17 @@ export const FullCalendarPage = () => {
 
   const getGroupedTasks = () => {
     const groups: Record<string, { label: string, tasks: any[] }> = {};
-    
+
     // Expand tasks from today to 2 years in future for the list view (or rely on what we want to show)
     // Actually, Calendar list view usually shows past and future.
     // Let's expand them for the next year to avoid infinite list
     const startDate = subMonths(new Date(), 1);
     const endDate = addYears(new Date(), 1);
-    
+
     // Sort tasks by due date
     const tasksWithDate = generateVirtualTasks(allTasks.filter(t => !t.parent_task_id), startDate, endDate)
-                           .filter(t => t.virtual_date || t.due_date);
-    
+      .filter(t => t.virtual_date || t.due_date);
+
     tasksWithDate.forEach(task => {
       const dateStr = task.virtual_date || task.due_date!;
       if (!groups[dateStr]) {
@@ -123,7 +123,7 @@ export const FullCalendarPage = () => {
         else if (isTomorrow(d)) label += ' · Tomorrow · ' + format(d, 'EEEE');
         else if (isYesterday(d)) label += ' · Yesterday · ' + format(d, 'EEEE');
         else label += ' · ' + format(d, 'EEEE');
-        
+
         groups[dateStr] = { label, tasks: [] };
       }
       groups[dateStr].tasks.push(task);
@@ -143,22 +143,22 @@ export const FullCalendarPage = () => {
   const groupedTasks = getGroupedTasks();
 
   return (
-    <div className="w-full max-w-[800px] mx-auto">
+    <div className="w-full max-w-[90%] mx-auto">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-[26px] font-bold text-white mb-2">Calendar</h1>
           <p className="text-gray-500 text-[13px]">All tasks scheduled across past, present, and future.</p>
         </div>
         <div className="flex items-center bg-[#282828] rounded-lg p-1 border border-[#333]">
-          <button 
-             onClick={() => setViewMode('calendar')}
-             className={`p-1.5 rounded-md transition-all ${viewMode === 'calendar' ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+          <button
+            onClick={() => setViewMode('calendar')}
+            className={`p-1.5 rounded-md transition-all ${viewMode === 'calendar' ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
           >
             <CalendarIcon className="w-4 h-4" />
           </button>
-          <button 
-             onClick={() => setViewMode('list')}
-             className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
           >
             <List className="w-4 h-4" />
           </button>
@@ -166,9 +166,9 @@ export const FullCalendarPage = () => {
       </div>
 
       {viewMode === 'calendar' ? (
-        <CalendarView 
-          tasks={allTasks} 
-          onAddTask={(date) => setIsAddingForDate(date)} 
+        <CalendarView
+          tasks={allTasks}
+          onAddTask={(date) => setIsAddingForDate(date)}
           onTaskClick={(task) => setSelectedTask(task)}
         />
       ) : (
@@ -188,9 +188,9 @@ export const FullCalendarPage = () => {
                     const taskTree = buildTaskTree([task, ...allTasks.filter(t => t.parent_task_id === task.id)]);
                     return <TaskItem key={`${task.id}-${task.virtual_date || ''}`} task={taskTree[0]} onToggle={(id) => handleToggle(id, task.virtual_date)} />;
                   })}
-                  
+
                   {isAddingForDate === dateStr ? (
-                    <ViewTaskForm 
+                    <ViewTaskForm
                       defaultDueDate={dateStr}
                       onCancel={() => setIsAddingForDate(null)}
                       onSave={(newTask) => {
@@ -199,7 +199,7 @@ export const FullCalendarPage = () => {
                       }}
                     />
                   ) : (
-                    <button 
+                    <button
                       onClick={() => setIsAddingForDate(dateStr)}
                       className="mt-3 flex items-center space-x-2 text-gray-500 hover:text-[#db4c3f] text-[13px] font-medium transition-colors p-1 -ml-1 rounded-md group"
                     >
@@ -218,7 +218,7 @@ export const FullCalendarPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-lg bg-[#1e1e1e] rounded-xl border border-[#333] p-6 shadow-2xl">
             <h3 className="text-lg font-bold text-white mb-4">Add task for {isAddingForDate}</h3>
-            <ViewTaskForm 
+            <ViewTaskForm
               defaultDueDate={isAddingForDate}
               onCancel={() => setIsAddingForDate(null)}
               onSave={(newTask) => {
@@ -231,11 +231,11 @@ export const FullCalendarPage = () => {
       )}
 
       {selectedTask && (
-        <TaskDetailModal 
-          onClose={() => setSelectedTask(null)} 
-          taskId={selectedTask.id} 
+        <TaskDetailModal
+          onClose={() => setSelectedTask(null)}
+          taskId={selectedTask.id}
           virtualDate={selectedTask.virtual_date}
-          onTaskUpdated={() => {}}
+          onTaskUpdated={() => { }}
         />
       )}
     </div>

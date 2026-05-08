@@ -35,10 +35,10 @@ export const SearchPage = () => {
 
   const getFilteredTasks = () => {
     if (!searchQuery.trim()) return [];
-    
+
     const query = searchQuery.toLowerCase();
-    
-    return allTasks.filter(t => 
+
+    return allTasks.filter(t =>
       t.title.toLowerCase().includes(query) ||
       (t.notes && t.notes.toLowerCase().includes(query)) ||
       (t.labels && t.labels.some(l => l.toLowerCase().includes(query)))
@@ -48,10 +48,10 @@ export const SearchPage = () => {
   const filteredTasks = getFilteredTasks();
 
   return (
-    <div className="w-full max-w-[800px] mx-auto pb-32">
+    <div className="w-full max-w-[90%] mx-auto pb-32">
       <div className="mb-8">
         <h1 className="text-[26px] font-bold text-white mb-2">Search</h1>
-        
+
         <div className="relative mt-4">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <SearchIcon className="w-5 h-5 text-gray-500" />
@@ -92,10 +92,10 @@ export const SearchPage = () => {
       )}
 
       {selectedTask && (
-        <TaskDetailModal 
-          onClose={() => setSelectedTask(null)} 
-          taskId={selectedTask.id} 
-          onTaskUpdated={() => {}}
+        <TaskDetailModal
+          onClose={() => setSelectedTask(null)}
+          taskId={selectedTask.id}
+          onTaskUpdated={() => { }}
         />
       )}
     </div>
