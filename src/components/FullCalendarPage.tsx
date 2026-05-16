@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   format,
   parseISO,
@@ -101,12 +101,10 @@ export const FullCalendarPage = () => {
     }
   };
 
-  const getGroupedTasks = () => {
+  const groupedTasks = useMemo(() => {
     const groups: Record<string, { label: string, tasks: any[] }> = {};
 
-    // Expand tasks from today to 2 years in future for the list view (or rely on what we want to show)
-    // Actually, Calendar list view usually shows past and future.
-    // Let's expand them for the next year to avoid infinite list
+    // Expand tasks from today to 2 years in future for the list view
     const startDate = subMonths(new Date(), 1);
     const endDate = addYears(new Date(), 1);
 
@@ -130,7 +128,7 @@ export const FullCalendarPage = () => {
     });
 
     return Object.entries(groups).sort(([dateA], [dateB]) => dateA.localeCompare(dateB));
-  };
+  }, [allTasks]);
 
   if (isLoading && allTasks.length === 0) {
     return (
@@ -140,10 +138,8 @@ export const FullCalendarPage = () => {
     );
   }
 
-  const groupedTasks = getGroupedTasks();
-
   return (
-    <div className="w-full max-w-[90%] mx-auto">
+    <div className="w-full lg:max-w-[90%] mx-auto">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-[26px] font-bold text-white mb-2">Calendar</h1>

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../lib/api';
 import type { Task } from '../lib/taskUtils';
 
@@ -27,128 +28,141 @@ interface TaskState {
   toggleTaskOccurrence: (taskId: number, date: string, isCompleted: boolean) => Promise<void>;
 }
 
-export const useTaskStore = create<TaskState>((set, get) => ({
-  tasks: [],
-  projects: [],
-  isLoading: false,
-  hasFetchedTasks: false,
-  hasFetchedProjects: false,
+export const useTaskStore = create<TaskState>()(
+  persist(
+    (set, get) => ({
+      tasks: [],
+      projects: [],
+      isLoading: false,
+      hasFetchedTasks: false,
+      hasFetchedProjects: false,
 
-  /** Fetch all tasks. Skips the network request if data is already loaded unless force=true. */
-  fetchTasks: async (params?: any, force = false) => {
-    if (!force && get().hasFetchedTasks && !params) return;
-    set({ isLoading: true });
-    try {
-      const response = await api.get('/tasks', { params });
-      const fetchedTasks = response.data;
-      
-      set((state) => {
-        const updated = [...state.tasks];
-        fetchedTasks.forEach((nt: Task) => {
-          const idx = updated.findIndex(t => t.id === nt.id);
-          if (idx >= 0) {
-            updated[idx] = nt;
-          } else {
-            updated.push(nt);
-          }
-        });
-        // Mark as fetched only for the base (no params) call
-        return { tasks: updated, hasFetchedTasks: !params ? true : state.hasFetchedTasks };
-      });
-    } catch (err) {
-      console.error('Failed to fetch tasks', err);
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  /** Force a full re-fetch on the next fetchTasks call. */
-  invalidateTasks: () => set({ hasFetchedTasks: false }),
-
-  /** Fetch projects. Skips the network request if data is already loaded unless force=true. */
-  fetchProjects: async (force = false) => {
-    if (!force && get().hasFetchedProjects) return;
-    try {
-      const response = await api.get('/projects');
-      set({ projects: response.data, hasFetchedProjects: true });
-    } catch (err) {
-      console.error('Failed to fetch projects', err);
-    }
-  },
-
-  updateTaskLocally: (id: number, updates: Partial<Task>) => {
-    set((state) => {
-      const updateRecursive = (list: Task[]): Task[] => {
-        return list.map(t => {
-          if (t.id === id) return { ...t, ...updates };
-          if (t.subtasks && t.subtasks.length > 0) {
-            return { ...t, subtasks: updateRecursive(t.subtasks) };
-          }
-          return t;
-        });
-      };
-      return { tasks: updateRecursive(state.tasks) };
-    });
-  },
-
-  deleteTaskLocally: (id: number) => {
-    set((state) => {
-      const filterRecursive = (list: Task[]): Task[] => {
-        return list
-          .filter(t => t.id !== id)
-          .map(t => ({
-            ...t,
-            subtasks: t.subtasks ? filterRecursive(t.subtasks) : undefined
-          }));
-      };
-      return { tasks: filterRecursive(state.tasks) };
-    });
-  },
-
-  addTaskLocally: (task: Task) => {
-    set((state) => {
-      if (task.parent_task_id) {
-        const addRecursive = (list: Task[]): Task[] => {
-          return list.map(t => {
-            if (t.id === task.parent_task_id) {
-              return {
-                ...t,
-                subtasks: [...(t.subtasks || []), task]
-              };
-            }
-            if (t.subtasks) {
-              return { ...t, subtasks: addRecursive(t.subtasks) };
-            }
-            return t;
+      /** Fetch all tasks. Skips the network request if data is already loaded unless force=true. */
+      fetchTasks: async (params?: any, force = false) => {
+        // If we have data and it's not a forced fetch, we still fetch in background for "stale-while-revalidate"
+        // but we don't show the loading spinner if we already have tasks.
+        const alreadyHasTasks = get().tasks.length > 0;
+        if (!force && get().hasFetchedTasks && !params) return;
+        
+        if (!alreadyHasTasks) set({ isLoading: true });
+        
+        try {
+          const response = await api.get('/tasks', { params });
+          const fetchedTasks = response.data;
+          
+          set((state) => {
+            const updated = [...state.tasks];
+            fetchedTasks.forEach((nt: Task) => {
+              const idx = updated.findIndex(t => t.id === nt.id);
+              if (idx >= 0) {
+                updated[idx] = nt;
+              } else {
+                updated.push(nt);
+              }
+            });
+            // Mark as fetched only for the base (no params) call
+            return { tasks: updated, hasFetchedTasks: !params ? true : state.hasFetchedTasks };
           });
-        };
-        return { tasks: addRecursive(state.tasks) };
-      }
-      return { tasks: [...state.tasks, task] };
-    });
-  },
+        } catch (err) {
+          console.error('Failed to fetch tasks', err);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
 
-  addProjectLocally: (project: Project) => {
-    set((state) => ({ projects: [...state.projects, project] }));
-  },
+      /** Force a full re-fetch on the next fetchTasks call. */
+      invalidateTasks: () => set({ hasFetchedTasks: false }),
 
-  updateProjectLocally: (id: number, updates: Partial<Project>) => {
-    set((state) => ({
-      projects: state.projects.map(p => p.id === id ? { ...p, ...updates } : p)
-    }));
-  },
+      /** Fetch projects. Skips the network request if data is already loaded unless force=true. */
+      fetchProjects: async (force = false) => {
+        if (!force && get().hasFetchedProjects) return;
+        try {
+          const response = await api.get('/projects');
+          set({ projects: response.data, hasFetchedProjects: true });
+        } catch (err) {
+          console.error('Failed to fetch projects', err);
+        }
+      },
 
-  toggleTaskOccurrence: async (taskId: number, date: string, isCompleted: boolean) => {
-    try {
-      const response = await api.post(`/tasks/${taskId}/complete-occurrence`, {
-        date,
-        is_completed: isCompleted,
-      });
-      const updatedTask = response.data;
-      get().updateTaskLocally(taskId, updatedTask);
-    } catch (err) {
-      console.error('Failed to toggle occurrence', err);
-      throw err; // Allow UI to handle failure
+      updateTaskLocally: (id: number, updates: Partial<Task>) => {
+        set((state) => {
+          const updateRecursive = (list: Task[]): Task[] => {
+            return list.map(t => {
+              if (t.id === id) return { ...t, ...updates };
+              if (t.subtasks && t.subtasks.length > 0) {
+                return { ...t, subtasks: updateRecursive(t.subtasks) };
+              }
+              return t;
+            });
+          };
+          return { tasks: updateRecursive(state.tasks) };
+        });
+      },
+
+      deleteTaskLocally: (id: number) => {
+        set((state) => {
+          const filterRecursive = (list: Task[]): Task[] => {
+            return list
+              .filter(t => t.id !== id)
+              .map(t => ({
+                ...t,
+                subtasks: t.subtasks ? filterRecursive(t.subtasks) : undefined
+              }));
+          };
+          return { tasks: filterRecursive(state.tasks) };
+        });
+      },
+
+      addTaskLocally: (task: Task) => {
+        set((state) => {
+          if (task.parent_task_id) {
+            const addRecursive = (list: Task[]): Task[] => {
+              return list.map(t => {
+                if (t.id === task.parent_task_id) {
+                  return {
+                    ...t,
+                    subtasks: [...(t.subtasks || []), task]
+                  };
+                }
+                if (t.subtasks) {
+                  return { ...t, subtasks: addRecursive(t.subtasks) };
+                }
+                return t;
+              });
+            };
+            return { tasks: addRecursive(state.tasks) };
+          }
+          return { tasks: [...state.tasks, task] };
+        });
+      },
+
+      addProjectLocally: (project: Project) => {
+        set((state) => ({ projects: [...state.projects, project] }));
+      },
+
+      updateProjectLocally: (id: number, updates: Partial<Project>) => {
+        set((state) => ({
+          projects: state.projects.map(p => p.id === id ? { ...p, ...updates } : p)
+        }));
+      },
+
+      toggleTaskOccurrence: async (taskId: number, date: string, isCompleted: boolean) => {
+        try {
+          const response = await api.post(`/tasks/${taskId}/complete-occurrence`, {
+            date,
+            is_completed: isCompleted,
+          });
+          const updatedTask = response.data;
+          get().updateTaskLocally(taskId, updatedTask);
+        } catch (err) {
+          console.error('Failed to toggle occurrence', err);
+          throw err; // Allow UI to handle failure
+        }
+      },
+    }),
+    {
+      name: 'task-storage', // unique name
+      storage: createJSONStorage(() => localStorage),
     }
-  },
-}));
+  )
+);

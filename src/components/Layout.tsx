@@ -187,7 +187,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto bg-[#1e1e1e] relative scroll-smooth">
-        <div className="w-full max-w-[90%] mx-auto pt-16 pb-32 px-6 lg:px-12">
+        <div className="w-full lg:max-w-[90%] mx-auto pt-16 pb-32 lg:px-12">
           {children}
         </div>
       </main>

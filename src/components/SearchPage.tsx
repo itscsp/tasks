@@ -48,7 +48,7 @@ export const SearchPage = () => {
   const filteredTasks = getFilteredTasks();
 
   return (
-    <div className="w-full max-w-[90%] mx-auto pb-32">
+    <div className="w-full lg:max-w-[90%] mx-auto pb-32">
       <div className="mb-8">
         <h1 className="text-[26px] font-bold text-white mb-2">Search</h1>
 

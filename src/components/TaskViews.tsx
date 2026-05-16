@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   format,
   addDays,
@@ -139,8 +139,11 @@ export const Today = () => {
   const [isAdding, setIsAdding] = useState(false);
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const virtualAllTasks = generateVirtualTasks(allTasks, new Date(), new Date());
-  const tasks = buildTaskTree(virtualAllTasks.filter((t: Task) => (t.virtual_date || t.due_date) === todayStr));
+  
+  const tasks = useMemo(() => {
+    const virtualAllTasks = generateVirtualTasks(allTasks, new Date(), new Date());
+    return buildTaskTree(virtualAllTasks.filter((t: Task) => (t.virtual_date || t.due_date) === todayStr));
+  }, [allTasks, todayStr]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -323,9 +326,14 @@ export const Upcoming = () => {
     return isBefore(parseISO(t.due_date), startOfDay(new Date()));
   });
 
-  const getUpcomingGroups = () => {
+  const today = startOfDay(new Date());
+
+  const virtualTasksForYear = useMemo(() => {
+    return generateVirtualTasks(allTasks, subDays(today, 3), addYears(today, 1));
+  }, [allTasks, today]);
+
+  const upcomingGroups = useMemo(() => {
     const groups: { date: string, label: string }[] = [];
-    const today = startOfDay(new Date());
 
     // 1. Ensure at least the next 7 days are included
     for (let i = 0; i < 7; i++) {
@@ -339,8 +347,7 @@ export const Upcoming = () => {
     }
 
     // 2. Add any other future dates that have tasks
-    const virtualTasks = generateVirtualTasks(allTasks, subDays(today, 3), addYears(today, 1));
-    virtualTasks.forEach((task: Task) => {
+    virtualTasksForYear.forEach((task: Task) => {
       const dateVal = task.virtual_date || task.due_date;
       if (dateVal && !task.is_completed) {
         const taskDate = parseISO(dateVal);
@@ -358,7 +365,7 @@ export const Upcoming = () => {
 
     // 3. Sort groups by date
     return groups.sort((a, b) => a.date.localeCompare(b.date));
-  };
+  }, [virtualTasksForYear, today]);
 
   if (isLoading && allTasks.length === 0) {
     return (
@@ -451,9 +458,8 @@ export const Upcoming = () => {
           )}
 
           <div className="space-y-10">
-            {getUpcomingGroups().map((group) => {
-              const virtualTasks = generateVirtualTasks(allTasks, subDays(new Date(), 3), addYears(new Date(), 1));
-              const groupTasks = virtualTasks.filter((t: Task) => (t.virtual_date || t.due_date) === group.date && !t.parent_task_id);
+            {upcomingGroups.map((group) => {
+              const groupTasks = virtualTasksForYear.filter((t: Task) => (t.virtual_date || t.due_date) === group.date && !t.parent_task_id);
               return (
                 <div key={group.date} className="relative">
                   <div className="py-2 border-b border-[#282828] mb-4">
