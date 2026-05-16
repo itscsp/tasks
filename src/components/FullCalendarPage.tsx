@@ -7,6 +7,11 @@ import {
   isYesterday,
   subMonths,
   addYears,
+  startOfMonth,
+  endOfMonth,
+  eachMonthOfInterval,
+  subYears,
+  isSameMonth
 } from 'date-fns';
 import {
   Loader2,
@@ -52,6 +57,15 @@ export const FullCalendarPage = () => {
   const [isAddingForDate, setIsAddingForDate] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [selectedMonth, setSelectedMonth] = useState<Date>(startOfMonth(new Date()));
+
+  // Generate 24 months (1 year back, 1 year forward) for the dropdown
+  const monthOptions = useMemo(() => {
+    return eachMonthOfInterval({
+      start: subYears(startOfMonth(new Date()), 1),
+      end: addYears(startOfMonth(new Date()), 1),
+    });
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -104,13 +118,17 @@ export const FullCalendarPage = () => {
   const groupedTasks = useMemo(() => {
     const groups: Record<string, { label: string, tasks: any[] }> = {};
 
-    // Expand tasks from today to 2 years in future for the list view
-    const startDate = subMonths(new Date(), 1);
-    const endDate = addYears(new Date(), 1);
+    const startDate = startOfMonth(selectedMonth);
+    const endDate = endOfMonth(selectedMonth);
 
     // Sort tasks by due date
     const tasksWithDate = generateVirtualTasks(allTasks.filter(t => !t.parent_task_id), startDate, endDate)
-      .filter(t => t.virtual_date || t.due_date);
+      .filter(t => {
+        const dateStr = t.virtual_date || t.due_date;
+        if (!dateStr) return false;
+        const taskDate = parseISO(dateStr);
+        return isSameMonth(taskDate, selectedMonth);
+      });
 
     tasksWithDate.forEach(task => {
       const dateStr = task.virtual_date || task.due_date!;
@@ -128,7 +146,7 @@ export const FullCalendarPage = () => {
     });
 
     return Object.entries(groups).sort(([dateA], [dateB]) => dateA.localeCompare(dateB));
-  }, [allTasks]);
+  }, [allTasks, selectedMonth]);
 
   if (isLoading && allTasks.length === 0) {
     return (
@@ -145,7 +163,21 @@ export const FullCalendarPage = () => {
           <h1 className="text-[26px] font-bold text-white mb-2">Calendar</h1>
           <p className="text-gray-500 text-[13px]">All tasks scheduled across past, present, and future.</p>
         </div>
-        <div className="flex items-center bg-[#282828] rounded-lg p-1 border border-[#333]">
+        <div className="flex items-center space-x-3">
+          {viewMode === 'list' && (
+            <select
+              value={selectedMonth.toISOString()}
+              onChange={(e) => setSelectedMonth(new Date(e.target.value))}
+              className="bg-[#282828] text-white border border-[#333] rounded-lg px-3 py-1.5 text-[13px] font-medium outline-none hover:bg-[#333] transition-all cursor-pointer"
+            >
+              {monthOptions.map((month) => (
+                <option key={month.toISOString()} value={month.toISOString()}>
+                  {format(month, 'MMMM yyyy')}
+                </option>
+              ))}
+            </select>
+          )}
+          <div className="flex items-center bg-[#282828] rounded-lg p-1 border border-[#333]">
           <button
             onClick={() => setViewMode('calendar')}
             className={`p-1.5 rounded-md transition-all ${viewMode === 'calendar' ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
