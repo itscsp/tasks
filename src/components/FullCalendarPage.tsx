@@ -5,7 +5,6 @@ import {
   isToday,
   isTomorrow,
   isYesterday,
-  subMonths,
   addYears,
   startOfMonth,
   endOfMonth,
@@ -192,8 +191,9 @@ export const FullCalendarPage = () => {
           </button>
         </div>
       </div>
+    </div>
 
-      {viewMode === 'calendar' ? (
+    {viewMode === 'calendar' ? (
         <CalendarView
           tasks={allTasks}
           onAddTask={(date) => setIsAddingForDate(date)}
