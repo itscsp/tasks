@@ -10,7 +10,10 @@ import {
   subDays,
   isSameDay,
   addYears,
-  endOfDay
+  endOfDay,
+  startOfWeek,
+  endOfWeek,
+  isAfter
 } from 'date-fns';
 import {
   Plus,
@@ -95,25 +98,34 @@ export const Inbox = () => {
     }
   };
 
-  const thisWeekTasks = useMemo(() => {
+  const { completedCount, thisWeekTasks } = useMemo(() => {
     const taskTree = buildTaskTree(allTasks);
-    const today = startOfDay(new Date());
-    const nextWeek = endOfDay(addDays(today, 6));
-    const allVirtual = generateVirtualTasks(taskTree, today, nextWeek);
+    const start = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const end = endOfWeek(new Date(), { weekStartsOn: 1 });
+    const allVirtual = generateVirtualTasks(taskTree, start, end);
     
-    // Get unique task IDs to avoid repeating daily tasks 7 times
+    let completedCount = 0;
     const uniqueTaskIds = new Set<number>();
     const summaryTasks: Task[] = [];
     
     allVirtual.forEach(t => {
-      // Show only uncompleted tasks in the summary
-      if (!t.is_completed && !uniqueTaskIds.has(t.id)) {
-        uniqueTaskIds.add(t.id);
-        summaryTasks.push(t);
+      const dateStr = t.virtual_date || t.due_date;
+      if (!dateStr) return; // Ignore tasks without dates for the weekly summary
+      
+      const d = parseISO(dateStr);
+      if (!isBefore(d, start) && !isAfter(d, end)) {
+        if (t.is_completed) {
+          completedCount++;
+        } else {
+          if (!uniqueTaskIds.has(t.id)) {
+            uniqueTaskIds.add(t.id);
+            summaryTasks.push(t);
+          }
+        }
       }
     });
     
-    return summaryTasks;
+    return { completedCount, thisWeekTasks: summaryTasks };
   }, [allTasks]);
 
   if (isLoading && tasks.length === 0) {
@@ -131,23 +143,34 @@ export const Inbox = () => {
         <p className="text-gray-500 text-[13px]">Uncategorized and new tasks</p>
       </div>
 
-      {thisWeekTasks.length > 0 && (
-        <div className="mb-8 bg-[#282828] p-4 rounded-lg border border-[#333]">
-          <h2 className="text-[14px] font-bold text-[#db4c3f] mb-3 uppercase tracking-wider">This Week's Summary</h2>
-          <ul className="list-disc pl-5 space-y-1">
-            {thisWeekTasks.map(task => (
-              <li key={task.id} className="text-[13px] text-gray-300">
-                <span className="font-medium text-gray-200">{task.title}</span>
-                {task.project_id && (
-                  <span className="text-gray-500 ml-2">
-                    (Project)
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
+      <div className="mb-8 bg-[#282828] p-4 rounded-lg border border-[#333]">
+        <h2 className="text-[14px] font-bold text-[#db4c3f] mb-3 uppercase tracking-wider">This Week's Summary</h2>
+        <div className="space-y-3">
+          <p className="text-[13px] text-gray-400 font-medium bg-[#333]/50 p-2 rounded inline-block">
+            You have completed <span className="text-green-500 font-bold">{completedCount}</span> {completedCount === 1 ? 'task' : 'tasks'} this week.
+          </p>
+          
+          {thisWeekTasks.length > 0 ? (
+            <div>
+              <p className="text-[13px] text-gray-400 mb-2 font-medium">Pending tasks to focus on:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                {thisWeekTasks.map(task => (
+                  <li key={task.id} className="text-[13px] text-gray-300">
+                    <span className="font-medium text-gray-200">{task.title}</span>
+                    {task.project_id && (
+                      <span className="text-gray-500 ml-2">
+                        (Project)
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-[13px] text-gray-400 italic">You have no pending tasks scheduled for this week.</p>
+          )}
         </div>
-      )}
+      </div>
 
       <div className="space-y-1">
         {tasks.map((task) => (
