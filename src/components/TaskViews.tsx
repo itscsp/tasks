@@ -9,7 +9,8 @@ import {
   isTomorrow,
   subDays,
   isSameDay,
-  addYears
+  addYears,
+  endOfDay
 } from 'date-fns';
 import {
   Plus,
@@ -102,12 +103,51 @@ export const Inbox = () => {
     );
   }
 
+  const thisWeekTasks = useMemo(() => {
+    const taskTree = buildTaskTree(allTasks);
+    const today = startOfDay(new Date());
+    const nextWeek = endOfDay(addDays(today, 6));
+    const allVirtual = generateVirtualTasks(taskTree, today, nextWeek);
+    
+    // Get unique task IDs to avoid repeating daily tasks 7 times
+    const uniqueTaskIds = new Set<number>();
+    const summaryTasks: Task[] = [];
+    
+    allVirtual.forEach(t => {
+      // Show only uncompleted tasks in the summary
+      if (!t.is_completed && !uniqueTaskIds.has(t.id)) {
+        uniqueTaskIds.add(t.id);
+        summaryTasks.push(t);
+      }
+    });
+    
+    return summaryTasks;
+  }, [allTasks]);
+
   return (
     <div className="w-full">
       <div className="mb-8">
         <h1 className="text-[26px] font-bold text-white mb-2">Inbox</h1>
         <p className="text-gray-500 text-[13px]">Uncategorized and new tasks</p>
       </div>
+
+      {thisWeekTasks.length > 0 && (
+        <div className="mb-8 bg-[#282828] p-4 rounded-lg border border-[#333]">
+          <h2 className="text-[14px] font-bold text-[#db4c3f] mb-3 uppercase tracking-wider">This Week's Summary</h2>
+          <ul className="list-disc pl-5 space-y-1">
+            {thisWeekTasks.map(task => (
+              <li key={task.id} className="text-[13px] text-gray-300">
+                <span className="font-medium text-gray-200">{task.title}</span>
+                {task.project_id && (
+                  <span className="text-gray-500 ml-2">
+                    (Project)
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="space-y-1">
         {tasks.map((task) => (
@@ -142,7 +182,7 @@ export const Today = () => {
   
   const tasks = useMemo(() => {
     const taskTree = buildTaskTree(allTasks);
-    const virtualAllTasks = generateVirtualTasks(taskTree, new Date(), new Date());
+    const virtualAllTasks = generateVirtualTasks(taskTree, startOfDay(new Date()), endOfDay(new Date()));
     return virtualAllTasks.filter((t: Task) => (t.virtual_date || t.due_date) === todayStr);
   }, [allTasks, todayStr]);
 
