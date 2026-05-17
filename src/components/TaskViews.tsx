@@ -141,8 +141,9 @@ export const Today = () => {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   
   const tasks = useMemo(() => {
-    const virtualAllTasks = generateVirtualTasks(allTasks, new Date(), new Date());
-    return buildTaskTree(virtualAllTasks.filter((t: Task) => (t.virtual_date || t.due_date) === todayStr));
+    const taskTree = buildTaskTree(allTasks);
+    const virtualAllTasks = generateVirtualTasks(taskTree, new Date(), new Date());
+    return virtualAllTasks.filter((t: Task) => (t.virtual_date || t.due_date) === todayStr);
   }, [allTasks, todayStr]);
 
   const fetchData = async () => {
@@ -329,7 +330,8 @@ export const Upcoming = () => {
   const today = startOfDay(new Date());
 
   const virtualTasksForYear = useMemo(() => {
-    return generateVirtualTasks(allTasks, subDays(today, 3), addYears(today, 1));
+    const taskTree = buildTaskTree(allTasks);
+    return generateVirtualTasks(taskTree, subDays(today, 3), addYears(today, 1));
   }, [allTasks, today]);
 
   const upcomingGroups = useMemo(() => {
@@ -467,8 +469,7 @@ export const Upcoming = () => {
                   </div>
                   <div className="space-y-1 pl-1">
                     {groupTasks.map((task: any) => {
-                      const taskTree = buildTaskTree([task, ...allTasks.filter(t => t.parent_task_id === task.id)]);
-                      return <TaskItem key={`${task.id}-${task.virtual_date || ''}`} task={taskTree[0]} onToggle={(id) => handleToggle(id, task.virtual_date)} />;
+                      return <TaskItem key={`${task.id}-${task.virtual_date || ''}`} task={task} onToggle={(id) => handleToggle(id, task.virtual_date)} />;
                     })}
 
                     {isAddingForDate === group.date ? (

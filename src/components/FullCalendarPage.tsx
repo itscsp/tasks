@@ -121,7 +121,9 @@ export const FullCalendarPage = () => {
     const endDate = endOfMonth(selectedMonth);
 
     // Sort tasks by due date
-    const tasksWithDate = generateVirtualTasks(allTasks.filter(t => !t.parent_task_id), startDate, endDate)
+    const taskTree = buildTaskTree(allTasks);
+    const tasksWithDate = generateVirtualTasks(taskTree, startDate, endDate)
+      .filter(t => !t.parent_task_id)
       .filter(t => {
         const dateStr = t.virtual_date || t.due_date;
         if (!dateStr) return false;
@@ -213,8 +215,7 @@ export const FullCalendarPage = () => {
                 </div>
                 <div className="space-y-1 pl-1">
                   {group.tasks.map((task: any) => {
-                    const taskTree = buildTaskTree([task, ...allTasks.filter(t => t.parent_task_id === task.id)]);
-                    return <TaskItem key={`${task.id}-${task.virtual_date || ''}`} task={taskTree[0]} onToggle={(id) => handleToggle(id, task.virtual_date)} />;
+                    return <TaskItem key={`${task.id}-${task.virtual_date || ''}`} task={task} onToggle={(id) => handleToggle(id, task.virtual_date)} />;
                   })}
 
                   {isAddingForDate === dateStr ? (

@@ -94,7 +94,17 @@ export const TaskDetailModal = ({ taskId, virtualDate, onClose, onTaskUpdated }:
         api.get(`/tasks/${taskId}`),
         api.get(`/tasks/${taskId}/comments`)
       ]);
-      const data = taskRes.data;
+      let data = taskRes.data;
+      if (virtualDate) {
+        data.is_completed = data.completed_occurrences?.includes(virtualDate) || false;
+        if (data.subtasks) {
+          const dateCompletions = data.subtask_completions?.[virtualDate] || [];
+          data.subtasks = data.subtasks.map((sub: Task) => ({
+            ...sub,
+            is_completed: dateCompletions.includes(sub.id)
+          }));
+        }
+      }
       setTask(data);
       setLocalTitle(data.title);
       setLocalNotes(data.notes || '');
