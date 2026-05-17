@@ -95,14 +95,6 @@ export const Inbox = () => {
     }
   };
 
-  if (isLoading && tasks.length === 0) {
-    return (
-      <div className="w-full py-20 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-gray-600 animate-spin" />
-      </div>
-    );
-  }
-
   const thisWeekTasks = useMemo(() => {
     const taskTree = buildTaskTree(allTasks);
     const today = startOfDay(new Date());
@@ -123,6 +115,14 @@ export const Inbox = () => {
     
     return summaryTasks;
   }, [allTasks]);
+
+  if (isLoading && tasks.length === 0) {
+    return (
+      <div className="w-full py-20 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-gray-600 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
