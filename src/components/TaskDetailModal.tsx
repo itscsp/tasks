@@ -73,7 +73,14 @@ export const TaskDetailModal = ({ taskId, virtualDate, onClose, onTaskUpdated }:
 
     // Reset to auto to get actual scroll height based on current text
     el.style.height = 'auto';
-    const trueHeight = el.scrollHeight;
+    
+    // Find the editor container inside Quill to get its actual content height
+    const editorEl = el.querySelector('.ql-editor');
+    const toolbarEl = el.querySelector('.ql-toolbar');
+    
+    const editorHeight = editorEl ? editorEl.scrollHeight : 0;
+    const toolbarHeight = toolbarEl ? toolbarEl.clientHeight : 40;
+    const trueHeight = editorHeight + toolbarHeight + 30; // 30px padding/margin spacing
 
     if (trueHeight > 500) {
       setShowReadMoreNotes(true);
@@ -473,7 +480,11 @@ export const TaskDetailModal = ({ taskId, virtualDate, onClose, onTaskUpdated }:
                     "text-gray-500 line-through": (virtualDate ? task.completed_occurrences?.includes(virtualDate) : task.is_completed)
                   })}
                 />
-                <div className="relative overflow-hidden" ref={notesRef}>
+                <div 
+                  className="relative overflow-hidden" 
+                  ref={notesRef}
+                  style={{ '--editor-max-height': isNotesExpanded ? 'none' : '440px' } as React.CSSProperties}
+                >
                   <div className="quill-custom-wrapper pb-2">
                     <ReactQuill
                       theme="snow"

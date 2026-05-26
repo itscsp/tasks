@@ -103,7 +103,10 @@ body {
 
 .quill-custom-wrapper .ql-editor {
   padding: 0;
+  padding-right: 6px;
   color: #d1d5db; /* text-gray-300 */
+  max-height: var(--editor-max-height, none);
+  overflow-y: auto;
 }
 
 .quill-custom-wrapper .ql-editor.ql-blank::before {
